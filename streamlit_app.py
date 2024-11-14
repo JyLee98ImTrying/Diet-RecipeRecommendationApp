@@ -17,7 +17,7 @@ def load_data():
         if 'Cluster' not in df.columns and 'kmeans' in st.session_state.get('models', {}):
             features = df[['Calories', 'ProteinContent', 'FatContent', 
                          'CarbohydrateContent', 'SodiumContent', 
-                         'CholesterolContent', 'SaturatedFatContent', 'SugarContent', 'FiberContent']]
+                         'CholesterolContent', 'SaturatedFatContent', 'FiberContent', 'SugarContent']]
             scaled_features = st.session_state['models']['scaler'].transform(features)
             df['Cluster'] = st.session_state['models']['kmeans'].predict(scaled_features)
         
@@ -78,7 +78,7 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         
         required_columns = ['Calories', 'ProteinContent', 'FatContent', 
                           'CarbohydrateContent', 'SodiumContent', 
-                          'CholesterolContent', 'SaturatedFatContent', 'SugarContent', 'FiberContent']
+                          'CholesterolContent', 'SaturatedFatContent', 'FiberContent', 'SugarContent']
         
         cluster_features = cluster_data[required_columns]
         cluster_features_scaled = models['scaler'].transform(cluster_features)
@@ -153,8 +153,8 @@ if df is not None and models is not None:
             2000 * meal_fraction,
             200 * meal_fraction,
             (fat_grams * 0.01) * meal_fraction,
-            (carb_grams * 0.02) * meal_fraction,
-            (carb_grams * 0.03) * meal_fraction
+            (carb_grams * 0.03) * meal_fraction,
+            (carb_grams * 0.01) * meal_fraction
         ]).reshape(1, -1)
                 
         # Store input features in session state for reshuffling
