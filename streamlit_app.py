@@ -304,8 +304,8 @@ if df is not None and models is not None:
             st.write("Full error details:", e)
             return pd.DataFrame()
 
-    # Get Recommendations button
-  if st.button("Get Recommendations"):
+# Update the button handlers to pass the user's weight
+if st.button("Get Recommendations"):
     daily_calories = calculate_caloric_needs(gender, weight, height, age)
     protein_grams = 0.8 * weight
     fat_calories = 0.25 * daily_calories
