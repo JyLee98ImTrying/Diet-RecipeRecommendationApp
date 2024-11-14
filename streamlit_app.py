@@ -145,19 +145,18 @@ if df is not None and models is not None:
         # Clear previous recommendations
         st.session_state.previous_recommendations = set()
         
-        # Create input features array with all 9 features
         input_features = np.array([
-            daily_calories * meal_fraction,      # Calories
-            protein_grams * meal_fraction,       # Protein
-            fat_grams * meal_fraction,           # Fat
-            carb_grams * meal_fraction,          # Carbohydrate
-            2000 * meal_fraction,                # Sodium
-            200 * meal_fraction,                 # Cholesterol
-            (fat_grams * 0.01) * meal_fraction,   # Saturated Fat
-            (carb_grams * 0.02) * meal_fraction,  # Sugar
-            (carb_grams * 0.03) * meal_fraction   # Fiber
-        ])
-        
+            daily_calories * meal_fraction,
+            protein_grams * meal_fraction,
+            fat_grams * meal_fraction,
+            carb_grams * meal_fraction,
+            2000 * meal_fraction,
+            200 * meal_fraction,
+            (fat_grams * 0.01) * meal_fraction,
+            (carb_grams * 0.02) * meal_fraction,
+            (carb_grams * 0.03) * meal_fraction
+        ]).reshape(1, -1)
+                
         # Store input features in session state for reshuffling
         st.session_state.current_input_features = input_features
         
