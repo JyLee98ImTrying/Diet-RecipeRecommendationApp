@@ -53,13 +53,12 @@ def calculate_caloric_needs(gender, weight, height, age):
         BMR = 66 + (13.7 * weight) + (5 * height) - (6.8 * age)
     return BMR
 
-def recommend_food(input_data, df, models, excluded_indices=None, wellness_goal=None):
+def recommend_food(input_data, df, models, excluded_indices=None, wellness_goal=None, user_weight=None):
     try:
         input_data_reshaped = input_data.reshape(1, -1)
         input_data_scaled = models['scaler'].transform(input_data_reshaped)
         
         cluster_label = models['kmeans'].predict(input_data_scaled)[0]
-        
         cluster_data = df[df['Cluster'] == cluster_label].copy()
         
         if cluster_data.empty:
@@ -75,18 +74,57 @@ def recommend_food(input_data, df, models, excluded_indices=None, wellness_goal=
         
         if excluded_indices is not None:
             cluster_data = cluster_data[~cluster_data.index.isin(excluded_indices)]
+
+        st.write(f"Current wellness goal: {wellness_goal}")
+        st.write(f"Initial cluster size: {len(cluster_data)}")
             
         # Condition 1: Filter for weight loss
         if wellness_goal == "Lose Weight":
-            cluster_data = cluster_data[
+            st.write("Applying weight loss filters...")
+            filtered_data = cluster_data[
                 (cluster_data['SaturatedFatContent'] <= 0.5) & 
                 (cluster_data['SugarContent'] <= 2)
             ]
+            st.write(f"Foods matching weight loss criteria: {len(filtered_data)}")
             
-            if cluster_data.empty:
-                st.warning("No foods match the weight loss criteria. Showing alternative recommendations.")
-                # Fallback to original cluster data with a warning
-                cluster_data = df[df['Cluster'] == cluster_label].copy()
+            if not filtered_data.empty:
+                cluster_data = filtered_data
+            else:
+                st.warning("No foods match the strict weight loss criteria. Showing alternatives with lowest fat and sugar content.")
+                cluster_data['combined_score'] = (cluster_data['SaturatedFatContent'] + cluster_data['SugarContent'])
+                cluster_data = cluster_data.nsmallest(int(len(cluster_data) * 0.2), 'combined_score')
+        
+        # Condition 2: Filter and adjust for muscle gain
+        if wellness_goal == "Muscle Gain" and user_weight is not None:
+            st.write("Applying muscle gain criteria...")
+            
+            # Calculate target protein per meal (assuming 3 meals per day)
+            daily_protein_target = user_weight  # 1g per kg
+            protein_per_meal = daily_protein_target / 3
+            
+            # Create a margin of ±20% around the target
+            protein_lower_bound = protein_per_meal * 0.8
+            protein_upper_bound = protein_per_meal * 1.2
+            
+            st.write(f"Target protein per meal: {protein_per_meal:.2f}g")
+            st.write(f"Acceptable protein range: {protein_lower_bound:.2f}g - {protein_upper_bound:.2f}g")
+            
+            # Filter foods within the protein range
+            protein_filtered_data = cluster_data[
+                (cluster_data['ProteinContent'] >= protein_lower_bound) &
+                (cluster_data['ProteinContent'] <= protein_upper_bound)
+            ]
+            
+            st.write(f"Foods matching protein criteria: {len(protein_filtered_data)}")
+            
+            if not protein_filtered_data.empty:
+                cluster_data = protein_filtered_data
+            else:
+                st.warning("No foods exactly match the protein target. Showing closest alternatives.")
+                # Calculate how far each food is from the target protein
+                cluster_data['protein_distance'] = abs(cluster_data['ProteinContent'] - protein_per_meal)
+                # Take the top 20% closest to target
+                cluster_data = cluster_data.nsmallest(int(len(cluster_data) * 0.2), 'protein_distance')
         
         required_columns = ['Calories', 'ProteinContent', 'FatContent', 
                           'CarbohydrateContent', 'SodiumContent', 
@@ -95,17 +133,15 @@ def recommend_food(input_data, df, models, excluded_indices=None, wellness_goal=
         cluster_features = cluster_data[required_columns]
         cluster_features_scaled = models['scaler'].transform(cluster_features)
         
-        # Condition 2: Adjust similarity calculation for muscle gain
+        similarities = cosine_similarity(input_data_scaled, cluster_features_scaled).flatten()
+        
         if wellness_goal == "Muscle Gain":
-            # Create a protein-weighted version of the input data
-            protein_weighted_input = input_data_scaled.copy()
-            protein_idx = required_columns.index('ProteinContent')
-            protein_weighted_input[0, protein_idx] *= 6
-            
-            # Calculate similarity with protein-weighted input
-            similarities = cosine_similarity(protein_weighted_input, cluster_features_scaled).flatten()
-        else:
-            similarities = cosine_similarity(input_data_scaled, cluster_features_scaled).flatten()
+            # Adjust similarity scores to favor foods closer to target protein
+            protein_distances = abs(cluster_data['ProteinContent'] - protein_per_meal)
+            max_distance = protein_distances.max()
+            if max_distance > 0:
+                protein_scores = 1 - (protein_distances / max_distance)
+                similarities = similarities * (1 + protein_scores)
         
         cluster_data['Similarity'] = similarities
         
@@ -119,15 +155,25 @@ def recommend_food(input_data, df, models, excluded_indices=None, wellness_goal=
         if final_recommendations.empty:
             final_recommendations = cluster_data.sort_values(by='Similarity', ascending=False)
         
-        return final_recommendations[['Name', 'Calories', 'ProteinContent', 'FatContent', 
+        st.write(f"Number of final recommendations before filtering: {len(final_recommendations)}")
+        
+        result = final_recommendations[['Name', 'Calories', 'ProteinContent', 'FatContent', 
                                     'CarbohydrateContent', 'SodiumContent', 'CholesterolContent', 
                                     'SaturatedFatContent', 'SugarContent', 'RecipeInstructions']].head(5)
+        
+        st.write("\nRecommendation Statistics:")
+        st.write(f"Average Protein Content: {result['ProteinContent'].mean():.2f}g")
+        if wellness_goal == "Muscle Gain":
+            st.write(f"Target Protein per Meal: {protein_per_meal:.2f}g")
+        st.write(f"Average Saturated Fat: {result['SaturatedFatContent'].mean():.2f}g")
+        st.write(f"Average Sugar Content: {result['SugarContent'].mean():.2f}g")
+        
+        return result
                                     
     except Exception as e:
         st.error(f"Error in recommendation process: {str(e)}")
         st.write("Full error details:", e)
         return pd.DataFrame()
-
 
 # Streamlit UI
 st.title('🍅🧀MyHealthMyFood🥑🥬')
@@ -259,57 +305,62 @@ if df is not None and models is not None:
             return pd.DataFrame()
 
     # Get Recommendations button
-    if st.button("Get Recommendations"):
-        # Calculate all nutritional needs
-        daily_calories = calculate_caloric_needs(gender, weight, height, age)
-        protein_grams = 0.8 * weight
-        fat_calories = 0.25 * daily_calories
-        carb_calories = 0.55 * daily_calories
-        fat_grams = fat_calories / 9
-        carb_grams = carb_calories / 4
-        meal_fraction = 0.3
-        
-        # Clear previous recommendations
-        st.session_state.previous_recommendations = set()
-        
-        input_features = np.array([
-            daily_calories * meal_fraction,
-            protein_grams * meal_fraction,
-            fat_grams * meal_fraction,
-            carb_grams * meal_fraction,
-            2000 * meal_fraction,
-            200 * meal_fraction,
-            (fat_grams * 0.01) * meal_fraction,
-            (carb_grams * 0.03) * meal_fraction,
-            (carb_grams * 0.01) * meal_fraction
-        ]).reshape(1, -1)
-                
-        # Store input features and wellness goal in session state
-        st.session_state.current_input_features = input_features
-        st.session_state.current_wellness_goal = wellness_goal
-        
-        recommendations = recommend_food(input_features, df, models, wellness_goal=wellness_goal)
-        
-        if not recommendations.empty:
-            st.session_state.previous_recommendations.update(recommendations.index.tolist())
-            st.write("Recommended food items:")
-            st.write(recommendations)
-        else:
-            st.warning("No recommendations found. Please try different inputs.")
+  if st.button("Get Recommendations"):
+    daily_calories = calculate_caloric_needs(gender, weight, height, age)
+    protein_grams = 0.8 * weight
+    fat_calories = 0.25 * daily_calories
+    carb_calories = 0.55 * daily_calories
+    fat_grams = fat_calories / 9
+    carb_grams = carb_calories / 4
+    meal_fraction = 0.3
+    
+    st.session_state.previous_recommendations = set()
+    
+    input_features = np.array([
+        daily_calories * meal_fraction,
+        protein_grams * meal_fraction,
+        fat_grams * meal_fraction,
+        carb_grams * meal_fraction,
+        2000 * meal_fraction,
+        200 * meal_fraction,
+        (fat_grams * 0.01) * meal_fraction,
+        (carb_grams * 0.03) * meal_fraction,
+        (carb_grams * 0.01) * meal_fraction
+    ]).reshape(1, -1)
+            
+    st.session_state.current_input_features = input_features
+    st.session_state.current_wellness_goal = wellness_goal
+    st.session_state.current_weight = weight
+    
+    recommendations = recommend_food(
+        input_features, 
+        df, 
+        models, 
+        wellness_goal=wellness_goal,
+        user_weight=weight
+    )
+    
+    if not recommendations.empty:
+        st.session_state.previous_recommendations.update(recommendations.index.tolist())
+        st.write("Recommended food items:")
+        st.write(recommendations)
+    else:
+        st.warning("No recommendations found. Please try different inputs.")
 
-    # Reshuffle button
-    if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'current_input_features'):
-        recommendations = recommend_food(
-            st.session_state.current_input_features,
-            df,
-            models,
-            excluded_indices=list(st.session_state.previous_recommendations),
-            wellness_goal=st.session_state.get('current_wellness_goal')
-        )
-        
-        if not recommendations.empty:
-            st.session_state.previous_recommendations.update(recommendations.index.tolist())
-            st.write("New set of recommended food items:")
-            st.write(recommendations)
-        else:
-            st.warning("No more recommendations available in this category. Try adjusting your inputs for more options.")
+# Update the reshuffle button handler
+if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'current_input_features'):
+    recommendations = recommend_food(
+        st.session_state.current_input_features,
+        df,
+        models,
+        excluded_indices=list(st.session_state.previous_recommendations),
+        wellness_goal=st.session_state.get('current_wellness_goal'),
+        user_weight=st.session_state.get('current_weight')
+    )
+    
+    if not recommendations.empty:
+        st.session_state.previous_recommendations.update(recommendations.index.tolist())
+        st.write("New set of recommended food items:")
+        st.write(recommendations)
+    else:
+        st.warning("No more recommendations available in this category. Try adjusting your inputs for more options.")
