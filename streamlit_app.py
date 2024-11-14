@@ -100,7 +100,7 @@ def recommend_food(input_data, df, models, excluded_indices=None, wellness_goal=
             # Create a protein-weighted version of the input data
             protein_weighted_input = input_data_scaled.copy()
             protein_idx = required_columns.index('ProteinContent')
-            protein_weighted_input[0, protein_idx] *= 2  # Double the importance of protein
+            protein_weighted_input[0, protein_idx] *= 6
             
             # Calculate similarity with protein-weighted input
             similarities = cosine_similarity(protein_weighted_input, cluster_features_scaled).flatten()
