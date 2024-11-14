@@ -147,14 +147,16 @@ if st.button("Get Recommendations"):
     carb_grams = carb_calories / 4
     
     meal_fraction = 0.3
-    input_features = np.array([
-        daily_calories * meal_fraction,
-        protein_grams * meal_fraction,
-        fat_grams * meal_fraction,
-        carb_grams * meal_fraction,
-        2000 * meal_fraction,
-        200 * meal_fraction,
-        (fat_grams * 0.3) * meal_fraction
+        input_features = np.array([
+        daily_calories * meal_fraction,      # Calories
+        protein_grams * meal_fraction,       # Protein
+        fat_grams * meal_fraction,           # Fat
+        carb_grams * meal_fraction,          # Carbohydrate
+        2000 * meal_fraction,                # Sodium
+        200 * meal_fraction,                 # Cholesterol
+        (fat_grams * 0.3) * meal_fraction,   # Saturated Fat
+        (carb_grams * 0.1) * meal_fraction,  # Sugar 
+        (daily_calories * 0.03) * meal_fraction   # Fiber
     ])
     
     # Store input features in session state for reshuffling
