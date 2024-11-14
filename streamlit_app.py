@@ -145,9 +145,9 @@ if st.button("Get Recommendations"):
     
     fat_grams = fat_calories / 9
     carb_grams = carb_calories / 4
-    
-    meal_fraction = 0.3
-        input_features = np.array([
+   
+    # Updated input features to include all 9 features
+    input_features = np.array([
         daily_calories * meal_fraction,      # Calories
         protein_grams * meal_fraction,       # Protein
         fat_grams * meal_fraction,           # Fat
@@ -155,13 +155,12 @@ if st.button("Get Recommendations"):
         2000 * meal_fraction,                # Sodium
         200 * meal_fraction,                 # Cholesterol
         (fat_grams * 0.3) * meal_fraction,   # Saturated Fat
-        (carb_grams * 0.1) * meal_fraction,  # Sugar 
-        (daily_calories * 0.03) * meal_fraction   # Fiber
+        (carb_grams * 0.02) * meal_fraction,  # Sugar (estimating as 10% of carbs)
+        (daily_calories * 0.03) * meal_fraction   # Fiber (estimating as 10% of carbs)
     ])
     
     # Store input features in session state for reshuffling
     st.session_state.current_input_features = input_features
-    
     recommendations = recommend_food(input_features, df, models)
     
     if not recommendations.empty:
