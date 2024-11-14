@@ -17,7 +17,7 @@ def load_data():
         if 'Cluster' not in df.columns and 'kmeans' in st.session_state.get('models', {}):
             features = df[['Calories', 'ProteinContent', 'FatContent', 
                          'CarbohydrateContent', 'SodiumContent', 
-                         'CholesterolContent', 'SaturatedFatContent']]
+                         'CholesterolContent', 'SaturatedFatContent', 'SugarContent', 'FiberContent']]
             scaled_features = st.session_state['models']['scaler'].transform(features)
             df['Cluster'] = st.session_state['models']['kmeans'].predict(scaled_features)
         
@@ -46,8 +46,6 @@ def load_models():
         st.error(f"Error loading models: {str(e)}")
         return None
 
-
-# Function to calculate daily caloric needs
 def calculate_caloric_needs(gender, weight, height, age):
     if gender == "Female":
         BMR = 655 + (9.6 * weight) + (1.8 * height) - (4.7 * age)
@@ -62,7 +60,6 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         
         cluster_label = models['kmeans'].predict(input_data_scaled)[0]
         
-        # Filter dataset
         cluster_data = df[df['Cluster'] == cluster_label].copy()
         
         if cluster_data.empty:
@@ -76,7 +73,6 @@ def recommend_food(input_data, df, models, excluded_indices=None):
                 st.warning("No clusters found in the dataset.")
                 return pd.DataFrame()
         
-        # Exclude previously shown recommendations if provided
         if excluded_indices is not None:
             cluster_data = cluster_data[~cluster_data.index.isin(excluded_indices)]
         
@@ -109,12 +105,18 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         st.error(f"Error in recommendation process: {str(e)}")
         st.write("Full error details:", e)
         return pd.DataFrame()
+
+
 # Streamlit UI
 st.title('🍅🧀MyHealthMyFood🥑🥬')
 
 # Load data and models first
 df = load_data()
 models = load_models()
+
+# Initialize session state for storing previous recommendations
+if 'previous_recommendations' not in st.session_state:
+    st.session_state.previous_recommendations = set()
 
 if df is not None and models is not None:
     # User inputs
@@ -128,60 +130,58 @@ if df is not None and models is not None:
     if health_condition == "No Non-Communicable Disease":
         wellness_goal = st.selectbox("Select your wellness goal", 
                                    ["Maintain Weight", "Lose Weight", "Muscle Gain"])
-    
-    # Initialize session state for storing previous recommendations
-    if 'previous_recommendations' not in st.session_state:
+
+    # Get Recommendations button
+    if st.button("Get Recommendations"):
+        # Calculate all nutritional needs
+        daily_calories = calculate_caloric_needs(gender, weight, height, age)
+        protein_grams = 0.8 * weight
+        fat_calories = 0.25 * daily_calories
+        carb_calories = 0.55 * daily_calories
+        fat_grams = fat_calories / 9
+        carb_grams = carb_calories / 4
+        meal_fraction = 0.3
+        
+        # Clear previous recommendations
         st.session_state.previous_recommendations = set()
+        
+        # Create input features array with all 9 features
+        input_features = np.array([
+            daily_calories * meal_fraction,      # Calories
+            protein_grams * meal_fraction,       # Protein
+            fat_grams * meal_fraction,           # Fat
+            carb_grams * meal_fraction,          # Carbohydrate
+            2000 * meal_fraction,                # Sodium
+            200 * meal_fraction,                 # Cholesterol
+            (fat_grams * 0.01) * meal_fraction,   # Saturated Fat
+            (carb_grams * 0.02) * meal_fraction,  # Sugar
+            (carb_grams * 0.03) * meal_fraction   # Fiber
+        ])
+        
+        # Store input features in session state for reshuffling
+        st.session_state.current_input_features = input_features
+        
+        recommendations = recommend_food(input_features, df, models)
+        
+        if not recommendations.empty:
+            st.session_state.previous_recommendations.update(recommendations.index.tolist())
+            st.write("Recommended food items:")
+            st.write(recommendations)
+        else:
+            st.warning("No recommendations found. Please try different inputs.")
 
-if st.button("Get Recommendations"):
-    # Clear previous recommendations when getting new ones
-    st.session_state.previous_recommendations = set()
-    
-    daily_calories = calculate_caloric_needs(gender, weight, height, age)
-    
-    protein_grams = 0.8 * weight
-    fat_calories = 0.25 * daily_calories
-    carb_calories = 0.55 * daily_calories
-    
-    fat_grams = fat_calories / 9
-    carb_grams = carb_calories / 4
-   
-    # Updated input features to include all 9 features
-    input_features = np.array([
-        daily_calories * meal_fraction,      # Calories
-        protein_grams * meal_fraction,       # Protein
-        fat_grams * meal_fraction,           # Fat
-        carb_grams * meal_fraction,          # Carbohydrate
-        2000 * meal_fraction,                # Sodium
-        200 * meal_fraction,                 # Cholesterol
-        (fat_grams * 0.3) * meal_fraction,   # Saturated Fat
-        (carb_grams * 0.02) * meal_fraction,  # Sugar (estimating as 10% of carbs)
-        (daily_calories * 0.03) * meal_fraction   # Fiber (estimating as 10% of carbs)
-    ])
-    
-    # Store input features in session state for reshuffling
-    st.session_state.current_input_features = input_features
-    recommendations = recommend_food(input_features, df, models)
-    
-    if not recommendations.empty:
-        st.session_state.previous_recommendations.update(recommendations.index.tolist())
-        st.write("Recommended food items:")
-        st.write(recommendations)
-    else:
-        st.warning("No recommendations found. Please try different inputs.")
-
-# Add Reshuffle button
-if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'current_input_features'):
-    recommendations = recommend_food(
-        st.session_state.current_input_features,
-        df,
-        models,
-        excluded_indices=list(st.session_state.previous_recommendations)
-    )
-    
-    if not recommendations.empty:
-        st.session_state.previous_recommendations.update(recommendations.index.tolist())
-        st.write("New set of recommended food items:")
-        st.write(recommendations)
-    else:
-        st.warning("No more recommendations available in this category. Try adjusting your inputs for more options.")
+    # Reshuffle button
+    if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'current_input_features'):
+        recommendations = recommend_food(
+            st.session_state.current_input_features,
+            df,
+            models,
+            excluded_indices=list(st.session_state.previous_recommendations)
+        )
+        
+        if not recommendations.empty:
+            st.session_state.previous_recommendations.update(recommendations.index.tolist())
+            st.write("New set of recommended food items:")
+            st.write(recommendations)
+        else:
+            st.warning("No more recommendations available in this category. Try adjusting your inputs for more options.")
