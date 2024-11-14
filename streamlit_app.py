@@ -53,7 +53,7 @@ def calculate_caloric_needs(gender, weight, height, age):
         BMR = 66 + (13.7 * weight) + (5 * height) - (6.8 * age)
     return BMR
 
-def recommend_food(input_data, df, models, excluded_indices=None):
+def recommend_food(input_data, df, models, excluded_indices=None, wellness_goal=None):
     try:
         input_data_reshaped = input_data.reshape(1, -1)
         input_data_scaled = models['scaler'].transform(input_data_reshaped)
@@ -75,6 +75,18 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         
         if excluded_indices is not None:
             cluster_data = cluster_data[~cluster_data.index.isin(excluded_indices)]
+            
+        # Condition 1: Filter for weight loss
+        if wellness_goal == "Lose Weight":
+            cluster_data = cluster_data[
+                (cluster_data['SaturatedFatContent'] <= 0.5) & 
+                (cluster_data['SugarContent'] <= 2)
+            ]
+            
+            if cluster_data.empty:
+                st.warning("No foods match the weight loss criteria. Showing alternative recommendations.")
+                # Fallback to original cluster data with a warning
+                cluster_data = df[df['Cluster'] == cluster_label].copy()
         
         required_columns = ['Calories', 'ProteinContent', 'FatContent', 
                           'CarbohydrateContent', 'SodiumContent', 
@@ -83,7 +95,17 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         cluster_features = cluster_data[required_columns]
         cluster_features_scaled = models['scaler'].transform(cluster_features)
         
-        similarities = cosine_similarity(input_data_scaled, cluster_features_scaled).flatten()
+        # Condition 2: Adjust similarity calculation for muscle gain
+        if wellness_goal == "Muscle Gain":
+            # Create a protein-weighted version of the input data
+            protein_weighted_input = input_data_scaled.copy()
+            protein_idx = required_columns.index('ProteinContent')
+            protein_weighted_input[0, protein_idx] *= 2  # Double the importance of protein
+            
+            # Calculate similarity with protein-weighted input
+            similarities = cosine_similarity(protein_weighted_input, cluster_features_scaled).flatten()
+        else:
+            similarities = cosine_similarity(input_data_scaled, cluster_features_scaled).flatten()
         
         cluster_data['Similarity'] = similarities
         
