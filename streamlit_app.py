@@ -268,12 +268,17 @@ if st.button("Get Recommendations"):
 
 # Update the reshuffle button section similarly:
 if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'current_input_features'):
-    recommendations = recommend_food(
-        st.session_state.current_input_features,
-        df,
-        models,
-        excluded_indices=list(st.session_state.previous_recommendations)
-    )
-    display_recommendations(recommendations)
-else:
-    st.warning("No more recommendations available in this category. Try adjusting your inputs for more options.")
+        recommendations = recommend_food(
+            st.session_state.current_input_features,
+            df,
+            models,
+            excluded_indices=list(st.session_state.previous_recommendations),
+            wellness_goal=st.session_state.get('current_wellness_goal')
+        )
+        
+        if not recommendations.empty:
+            st.session_state.previous_recommendations.update(recommendations.index.tolist())
+            st.write("New set of recommended food items:")
+            st.write(recommendations)
+        else:
+            st.warning("No more recommendations available in this category. Try adjusting your inputs for more options.")
