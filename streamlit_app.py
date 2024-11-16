@@ -275,5 +275,5 @@ if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'current
         excluded_indices=list(st.session_state.previous_recommendations)
     )
     display_recommendations(recommendations)
-        else:
-            st.warning("No more recommendations available in this category. Try adjusting your inputs for more options.")
+else:
+    st.warning("No more recommendations available in this category. Try adjusting your inputs for more options.")
