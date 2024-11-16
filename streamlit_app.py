@@ -189,56 +189,91 @@ if df is not None and models is not None:
         wellness_goal = st.selectbox("Select your wellness goal", 
                                    ["Maintain Weight", "Lose Weight", "Muscle Gain"])
 
-    # Get Recommendations button
-    if st.button("Get Recommendations"):
-        daily_calories = calculate_caloric_needs(gender, weight, height, age)
-        protein_grams = 0.8 * weight
-        fat_calories = 0.25 * daily_calories
-        carb_calories = 0.55 * daily_calories
-        fat_grams = fat_calories / 9
-        carb_grams = carb_calories / 4
-        meal_fraction = 0.3
-        
-        st.session_state.previous_recommendations = set()
-        
-        input_features = np.array([
-            daily_calories * meal_fraction,
-            protein_grams * meal_fraction,
-            fat_grams * meal_fraction,
-            carb_grams * meal_fraction,
-            2000 * meal_fraction,
-            200 * meal_fraction,
-            (fat_grams * 0.01) * meal_fraction,
-            (carb_grams * 0.03) * meal_fraction,
-            (carb_grams * 0.01) * meal_fraction
-        ]).reshape(1, -1)
-                
-        # Store in session state
-        st.session_state.current_input_features = input_features
-        st.session_state.current_wellness_goal = wellness_goal
-        st.session_state.current_weight = weight
-        
-        recommendations = recommend_food(input_features, df, models)
-        
-        if not recommendations.empty:
-            st.session_state.previous_recommendations.update(recommendations.index.tolist())
-            st.write("Recommended food items:")
-            st.write(recommendations)
-        else:
-            st.warning("No recommendations found. Please try different inputs.")
+def format_recipe_instructions(instructions):
+    """Format recipe instructions from c() format to numbered list."""
+    if not isinstance(instructions, str):
+        return []
+    # Remove c() wrapper and split by commas
+    instructions = instructions.replace('c(', '').replace(')', '')
+    # Split by '", ' and clean up remaining quotes
+    steps = [step.strip().strip('"') for step in instructions.split('",')]
+    return steps
 
-    # Reshuffle button
-    if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'current_input_features'):
-        recommendations = recommend_food(
-            st.session_state.current_input_features,
-            df,
-            models,
-            excluded_indices=list(st.session_state.previous_recommendations)
-        )
+def display_recommendations(recommendations):
+    """Display recommendations in a vertical format with expandable recipe instructions."""
+    if not recommendations.empty:
+        st.write("### 🍳 Recommended Food Items")
         
-        if not recommendations.empty:
-            st.session_state.previous_recommendations.update(recommendations.index.tolist())
-            st.write("New set of recommended food items:")
-            st.write(recommendations)
+        # Display each recipe in a vertical format
+        for idx, row in recommendations.iterrows():
+            with st.expander(f"📗 {row['Name']}"):
+                # Create two columns for better layout
+                col1, col2 = st.columns(2)
+                
+                # Nutritional Information in first column
+                with col1:
+                    st.write("**📊 Nutritional Information**")
+                    st.write(f"• Calories: {row['Calories']:.1f}")
+                    st.write(f"• Protein: {row['ProteinContent']:.1f}g")
+                    st.write(f"• Fat: {row['FatContent']:.1f}g")
+                    st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
+                
+                # Additional nutritional details in second column
+                with col2:
+                    st.write("**🔍 Additional Details**")
+                    st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
+                    st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
+                    st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
+                    st.write(f"• Sugar: {row['SugarContent']:.1f}g")
+                
+                # Recipe Instructions
+                st.write("**👩‍🍳 Recipe Instructions**")
+                instructions = format_recipe_instructions(row['RecipeInstructions'])
+                for i, step in enumerate(instructions, 1):
+                    st.write(f"{i}. {step}")
+    else:
+        st.warning("No recommendations found. Please try different inputs.")
+
+# In your main code, replace the recommendation display section with this:
+if st.button("Get Recommendations"):
+    daily_calories = calculate_caloric_needs(gender, weight, height, age)
+    protein_grams = 0.8 * weight
+    fat_calories = 0.25 * daily_calories
+    carb_calories = 0.55 * daily_calories
+    fat_grams = fat_calories / 9
+    carb_grams = carb_calories / 4
+    meal_fraction = 0.3
+    
+    st.session_state.previous_recommendations = set()
+    
+    input_features = np.array([
+        daily_calories * meal_fraction,
+        protein_grams * meal_fraction,
+        fat_grams * meal_fraction,
+        carb_grams * meal_fraction,
+        2000 * meal_fraction,
+        200 * meal_fraction,
+        (fat_grams * 0.01) * meal_fraction,
+        (carb_grams * 0.03) * meal_fraction,
+        (carb_grams * 0.01) * meal_fraction
+    ]).reshape(1, -1)
+            
+    # Store in session state
+    st.session_state.current_input_features = input_features
+    st.session_state.current_wellness_goal = wellness_goal
+    st.session_state.current_weight = weight
+    
+    recommendations = recommend_food(input_features, df, models)
+    display_recommendations(recommendations)
+
+# Update the reshuffle button section similarly:
+if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'current_input_features'):
+    recommendations = recommend_food(
+        st.session_state.current_input_features,
+        df,
+        models,
+        excluded_indices=list(st.session_state.previous_recommendations)
+    )
+    display_recommendations(recommendations)
         else:
             st.warning("No more recommendations available in this category. Try adjusting your inputs for more options.")
