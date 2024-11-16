@@ -435,7 +435,4 @@ if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'all_rec
     else:
         st.warning("Please get initial recommendations first.")
 
-st.write("Raw quantities:", quantities)
-st.write("Raw parts:", parts)
-
 
