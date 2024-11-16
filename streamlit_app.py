@@ -5,6 +5,7 @@ import joblib
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pickle
 from sklearn.metrics.pairwise import cosine_similarity
+from itertools import zip_longest
 
 # Clear cache to ensure fresh data loading
 st.cache_data.clear()
@@ -57,44 +58,61 @@ def format_recipe_instructions(instructions):
     return steps
 
 def combine_ingredients(quantities, parts):
-    """Combine ingredient quantities and parts into natural language format."""
+    """
+    Combine ingredient quantities and parts into natural language format.
+    Handles various input formats including curly bracket notation.
+    """
     if pd.isna(quantities) or pd.isna(parts):
         return []
         
     try:
-        # Clean and split quantities
-        quantities = str(quantities)  # Convert to string explicitly
-        parts = str(parts)  # Convert to string explicitly
+        # Convert both inputs to string
+        quantities = str(quantities)
+        parts = str(parts)
         
-        # Debug prints
-        st.write("Debug - Raw quantities:", quantities)
-        st.write("Debug - Raw parts:", parts)
+        # Clean curly bracket format
+        def clean_bracket_format(text):
+            # Remove curly brackets
+            text = text.replace('{', '').replace('}', '')
+            # Split by commas, handling potential quoted strings
+            items = []
+            current_item = ''
+            in_quotes = False
+            
+            for char in text:
+                if char == '"':
+                    in_quotes = not in_quotes
+                    current_item += char
+                elif char == ',' and not in_quotes:
+                    items.append(current_item.strip())
+                    current_item = ''
+                else:
+                    current_item += char
+            
+            if current_item:
+                items.append(current_item.strip())
+                
+            # Clean up quotes and extra whitespace
+            return [item.strip().strip('"').strip("'") for item in items if item.strip()]
         
-        # Clean and split quantities
-        quantities = quantities.replace('c(', '').replace(')', '').split('",')
-        quantities = [q.strip().strip('"') for q in quantities]
-        
-        # Clean and split parts
-        parts = parts.replace('c(', '').replace(')', '').split('",')
-        parts = [p.strip().strip('"') for p in parts]
-        
-        # Debug prints
-        st.write("Debug - Processed quantities:", quantities)
-        st.write("Debug - Processed parts:", parts)
+        # Clean and split both quantities and parts
+        quantities_list = clean_bracket_format(quantities)
+        parts_list = clean_bracket_format(parts)
         
         # Combine quantities and parts
         ingredients = []
-        for q, p in zip(quantities, parts):
-            if pd.isna(q) or q.lower() == 'na':
-                ingredients.append(p)
+        for q, p in zip_longest(quantities_list, parts_list, fillvalue=''):
+            if not q or q.lower() == 'na':
+                if p:
+                    ingredients.append(p)
             else:
-                ingredients.append(f"{q} {p}")
+                ingredients.append(f"{q} {p}".strip())
         
-        return ingredients
+        return [ing for ing in ingredients if ing]  # Remove any empty strings
+        
     except Exception as e:
         st.error(f"Error processing ingredients: {str(e)}")
         return []
-
 def calculate_caloric_needs(gender, weight, height, age):
     if gender == "Female":
         BMR = 655 + (9.6 * weight) + (1.8 * height) - (4.7 * age)
