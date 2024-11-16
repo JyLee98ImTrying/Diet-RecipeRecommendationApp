@@ -58,63 +58,86 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         input_data_reshaped = input_data.reshape(1, -1)
         input_data_scaled = models['scaler'].transform(input_data_reshaped)
         
+        # Get current parameters from session state
+        wellness_goal = st.session_state.get('current_wellness_goal')
+        health_condition = st.session_state.get('current_health_condition')
+        user_weight = st.session_state.get('current_weight')
+        
+        # First, apply health condition filtering to the entire dataset
+        filtered_df = df.copy()
+        if health_condition == "Diabetic":
+            filtered_df = filtered_df[
+                (filtered_df['SugarContent'] <= 5) &  # Low sugar content
+                (filtered_df['FiberContent'] >= 3)    # Higher fiber helps manage blood sugar
+            ]
+        elif health_condition == "High Blood Pressure":
+            filtered_df = filtered_df[
+                (filtered_df['SodiumContent'] <= 500)  # Max 500mg sodium per serving
+            ]
+        elif health_condition == "High Cholesterol":
+            filtered_df = filtered_df[
+                (filtered_df['CholesterolContent'] <= 50) &     # Low cholesterol
+                (filtered_df['SaturatedFatContent'] <= 3)       # Low saturated fat
+            ]
+        
+        # If health-filtered dataset is empty, use original dataset with a warning
+        if filtered_df.empty:
+            st.warning(f"No foods exactly match the {health_condition} criteria. Showing best alternatives.")
+            filtered_df = df.copy()
+        
+        # Find cluster using filtered dataset
         cluster_label = models['kmeans'].predict(input_data_scaled)[0]
-        cluster_data = df[df['Cluster'] == cluster_label].copy()
+        cluster_data = filtered_df[filtered_df['Cluster'] == cluster_label].copy()
         
         if cluster_data.empty:
-            unique_clusters = df['Cluster'].unique()
+            unique_clusters = filtered_df['Cluster'].unique()
             if len(unique_clusters) > 0:
                 cluster_centers = models['kmeans'].cluster_centers_
                 distances = cosine_similarity(input_data_scaled, cluster_centers)
                 nearest_cluster = unique_clusters[distances.argmax()]
-                cluster_data = df[df['Cluster'] == nearest_cluster].copy()
+                cluster_data = filtered_df[filtered_df['Cluster'] == nearest_cluster].copy()
             else:
                 st.warning("No clusters found in the dataset.")
                 return pd.DataFrame()
         
         if excluded_indices is not None:
             cluster_data = cluster_data[~cluster_data.index.isin(excluded_indices)]
-
-        # Get current wellness goal from session state
-        wellness_goal = st.session_state.get('current_wellness_goal')
-        user_weight = st.session_state.get('current_weight')
             
-        # Condition 1: Filter for weight loss
+        # Enhanced weight loss filtering with scoring
         if wellness_goal == "Lose Weight":
-            filtered_data = cluster_data[
-                (cluster_data['SaturatedFatContent'] <= 0.5) & 
-                (cluster_data['SugarContent'] <= 2)
-            ]
-            
-            if not filtered_data.empty:
-                cluster_data = filtered_data
-            else:
-                st.warning("No foods match the strict weight loss criteria. Showing alternatives with lowest fat and sugar content.")
-                cluster_data['combined_score'] = (cluster_data['SaturatedFatContent'] + cluster_data['SugarContent'])
-                cluster_data = cluster_data.nsmallest(int(len(cluster_data) * 0.2), 'combined_score')
+            # Create a weight loss score
+            cluster_data['weight_loss_score'] = (
+                -0.4 * cluster_data['Calories'] +
+                0.3 * cluster_data['ProteinContent'] +
+                -0.3 * cluster_data['SaturatedFatContent'] +
+                0.2 * cluster_data['FiberContent'] +
+                -0.2 * cluster_data['SugarContent']
+            )
+            # Normalize the score
+            max_score = cluster_data['weight_loss_score'].max()
+            min_score = cluster_data['weight_loss_score'].min()
+            if max_score != min_score:
+                cluster_data['weight_loss_score'] = (cluster_data['weight_loss_score'] - min_score) / (max_score - min_score)
+                cluster_data = cluster_data.nlargest(int(len(cluster_data) * 0.5), 'weight_loss_score')
         
-        # Condition 2: Filter and adjust for muscle gain
+        # Enhanced muscle gain filtering with scoring
         if wellness_goal == "Muscle Gain" and user_weight is not None:
-            # Calculate target protein per meal (assuming 3 meals per day)
             daily_protein_target = user_weight  # 1g per kg
             protein_per_meal = daily_protein_target / 3
             
-            # Create a margin of ±20% around the target
-            protein_lower_bound = protein_per_meal * 0.8
-            protein_upper_bound = protein_per_meal * 1.2
-            
-            # Filter foods within the protein range
-            protein_filtered_data = cluster_data[
-                (cluster_data['ProteinContent'] >= protein_lower_bound) &
-                (cluster_data['ProteinContent'] <= protein_upper_bound)
-            ]
-            
-            if not protein_filtered_data.empty:
-                cluster_data = protein_filtered_data
-            else:
-                st.warning("No foods exactly match the protein target. Showing closest alternatives.")
-                cluster_data['protein_distance'] = abs(cluster_data['ProteinContent'] - protein_per_meal)
-                cluster_data = cluster_data.nsmallest(int(len(cluster_data) * 0.2), 'protein_distance')
+            # Create a muscle gain score
+            cluster_data['muscle_gain_score'] = (
+                0.4 * (1 / (abs(cluster_data['ProteinContent'] - protein_per_meal) + 1)) +
+                0.3 * cluster_data['ProteinContent'] +
+                0.2 * cluster_data['Calories'] +
+                0.1 * cluster_data['CarbohydrateContent']
+            )
+            # Normalize the score
+            max_score = cluster_data['muscle_gain_score'].max()
+            min_score = cluster_data['muscle_gain_score'].min()
+            if max_score != min_score:
+                cluster_data['muscle_gain_score'] = (cluster_data['muscle_gain_score'] - min_score) / (max_score - min_score)
+                cluster_data = cluster_data.nlargest(int(len(cluster_data) * 0.5), 'muscle_gain_score')
         
         required_columns = ['Calories', 'ProteinContent', 'FatContent', 
                           'CarbohydrateContent', 'SodiumContent', 
@@ -125,13 +148,17 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         
         similarities = cosine_similarity(input_data_scaled, cluster_features_scaled).flatten()
         
-        if wellness_goal == "Muscle Gain":
-            protein_per_meal = user_weight / 3  # Target protein per meal
-            protein_distances = abs(cluster_data['ProteinContent'] - protein_per_meal)
-            max_distance = protein_distances.max()
-            if max_distance > 0:
-                protein_scores = 1 - (protein_distances / max_distance)
-                similarities = similarities * (1 + protein_scores)
+        # Adjust similarities based on health condition
+        if health_condition != "No Non-Communicable Disease":
+            if health_condition == "Diabetic":
+                sugar_penalty = 1 - (cluster_data['SugarContent'] / cluster_data['SugarContent'].max())
+                similarities = similarities * (1 + sugar_penalty)
+            elif health_condition == "High Blood Pressure":
+                sodium_penalty = 1 - (cluster_data['SodiumContent'] / cluster_data['SodiumContent'].max())
+                similarities = similarities * (1 + sodium_penalty)
+            elif health_condition == "High Cholesterol":
+                cholesterol_penalty = 1 - (cluster_data['CholesterolContent'] / cluster_data['CholesterolContent'].max())
+                similarities = similarities * (1 + cholesterol_penalty)
         
         cluster_data['Similarity'] = similarities
         
@@ -145,19 +172,34 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         if final_recommendations.empty:
             final_recommendations = cluster_data.sort_values(by='Similarity', ascending=False)
         
-        # Return more recommendations (e.g., top 20 or all if less than 20)
         result = final_recommendations[['Name', 'Calories', 'ProteinContent', 'FatContent', 
                                     'CarbohydrateContent', 'SodiumContent', 'CholesterolContent', 
                                     'SaturatedFatContent', 'SugarContent', 'RecipeInstructions']]
         
-        # Add statistics about the recommendations
+        # Enhanced statistics display based on health condition and wellness goal
         if not result.empty:
             st.write("\nRecommendation Statistics:")
+            
+            # Base statistics
+            st.write(f"Average Calories: {result['Calories'].head().mean():.2f} kcal")
             st.write(f"Average Protein Content: {result['ProteinContent'].head().mean():.2f}g")
+            
+            # Health condition specific statistics
+            if health_condition == "Diabetic":
+                st.write(f"Average Sugar Content: {result['SugarContent'].head().mean():.2f}g")
+                st.write(f"Average Fiber Content: {result['FiberContent'].head().mean():.2f}g")
+            elif health_condition == "High Blood Pressure":
+                st.write(f"Average Sodium Content: {result['SodiumContent'].head().mean():.2f}mg")
+            elif health_condition == "High Cholesterol":
+                st.write(f"Average Cholesterol: {result['CholesterolContent'].head().mean():.2f}mg")
+                st.write(f"Average Saturated Fat: {result['SaturatedFatContent'].head().mean():.2f}g")
+            
+            # Wellness goal specific statistics
             if wellness_goal == "Muscle Gain":
                 st.write(f"Target Protein per Meal: {user_weight/3:.2f}g")
-            st.write(f"Average Saturated Fat: {result['SaturatedFatContent'].head().mean():.2f}g")
-            st.write(f"Average Sugar Content: {result['SugarContent'].head().mean():.2f}g")
+            elif wellness_goal == "Lose Weight":
+                st.write(f"Average Fat Content: {result['FatContent'].head().mean():.2f}g")
+                st.write(f"Average Fiber Content: {result['FiberContent'].head().mean():.2f}g")
         
         return result
                                     
@@ -267,6 +309,8 @@ if st.button("Get Recommendations"):
     st.session_state.current_input_features = input_features
     st.session_state.current_wellness_goal = wellness_goal
     st.session_state.current_weight = weight
+    st.session_state.current_health_condition = health_condition
+
     
     # Get initial recommendations
     recommendations = recommend_food(input_features, df, models)
