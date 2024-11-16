@@ -145,17 +145,19 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         if final_recommendations.empty:
             final_recommendations = cluster_data.sort_values(by='Similarity', ascending=False)
         
+        # Return more recommendations (e.g., top 20 or all if less than 20)
         result = final_recommendations[['Name', 'Calories', 'ProteinContent', 'FatContent', 
                                     'CarbohydrateContent', 'SodiumContent', 'CholesterolContent', 
-                                    'SaturatedFatContent', 'SugarContent', 'RecipeInstructions']].head(5)
+                                    'SaturatedFatContent', 'SugarContent', 'RecipeInstructions']]
         
         # Add statistics about the recommendations
-        st.write("\nRecommendation Statistics:")
-        st.write(f"Average Protein Content: {result['ProteinContent'].mean():.2f}g")
-        if wellness_goal == "Muscle Gain":
-            st.write(f"Target Protein per Meal: {user_weight/3:.2f}g")
-        st.write(f"Average Saturated Fat: {result['SaturatedFatContent'].mean():.2f}g")
-        st.write(f"Average Sugar Content: {result['SugarContent'].mean():.2f}g")
+        if not result.empty:
+            st.write("\nRecommendation Statistics:")
+            st.write(f"Average Protein Content: {result['ProteinContent'].head().mean():.2f}g")
+            if wellness_goal == "Muscle Gain":
+                st.write(f"Target Protein per Meal: {user_weight/3:.2f}g")
+            st.write(f"Average Saturated Fat: {result['SaturatedFatContent'].head().mean():.2f}g")
+            st.write(f"Average Sugar Content: {result['SugarContent'].head().mean():.2f}g")
         
         return result
                                     
@@ -174,6 +176,8 @@ models = load_models()
 # Initialize session state for storing previous recommendations
 if 'previous_recommendations' not in st.session_state:
     st.session_state.previous_recommendations = set()
+if 'all_recommendations_cache' not in st.session_state:
+    st.session_state.all_recommendations_cache = None
 
 if df is not None and models is not None:
     # User inputs
@@ -244,6 +248,7 @@ if st.button("Get Recommendations"):
     carb_grams = carb_calories / 4
     meal_fraction = 0.3
     
+    # Reset previous recommendations when getting new recommendations
     st.session_state.previous_recommendations = set()
     
     input_features = np.array([
@@ -263,22 +268,37 @@ if st.button("Get Recommendations"):
     st.session_state.current_wellness_goal = wellness_goal
     st.session_state.current_weight = weight
     
+    # Get initial recommendations
     recommendations = recommend_food(input_features, df, models)
-    display_recommendations(recommendations)
+    
+    # Store all recommendations in cache for reshuffling
+    if not recommendations.empty:
+        st.session_state.all_recommendations_cache = recommendations
+        # Store the indices of shown recommendations
+        st.session_state.previous_recommendations.update(recommendations.index[:5].tolist())
+        # Display only top 5 recommendations
+        display_recommendations(recommendations.head(5))
+    else:
+        st.warning("No recommendations found. Please try different inputs.")
 
 # Update the reshuffle button section similarly:
-if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'current_input_features'):
-        recommendations = recommend_food(
-            st.session_state.current_input_features,
-            df,
-            models,
-            excluded_indices=list(st.session_state.previous_recommendations),
-            wellness_goal=st.session_state.get('current_wellness_goal')
-        )
+if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'all_recommendations_cache'):
+    if st.session_state.all_recommendations_cache is not None:
+        # Get all recommendations excluding previously shown ones
+        remaining_recommendations = st.session_state.all_recommendations_cache[
+            ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
+        ]
         
-        if not recommendations.empty:
-            st.session_state.previous_recommendations.update(recommendations.index.tolist())
-            st.write("New set of recommended food items:")
-            st.write(recommendations)
+        if not remaining_recommendations.empty:
+            # Get next 5 recommendations
+            new_recommendations = remaining_recommendations.head(5)
+            # Update shown recommendations
+            st.session_state.previous_recommendations.update(new_recommendations.index.tolist())
+            # Display new recommendations
+            display_recommendations(new_recommendations)
         else:
-            st.warning("No more recommendations available in this category. Try adjusting your inputs for more options.")
+            st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
+    else:
+        st.warning("Please get initial recommendations first.")
+
+
