@@ -187,7 +187,6 @@ def recommend_food(input_data, df, models, excluded_indices=None):
             # Health condition specific statistics
             if health_condition == "Diabetic":
                 st.write(f"Average Sugar Content: {result['SugarContent'].head().mean():.2f}g")
-                st.write(f"Average Fiber Content: {result['FiberContent'].head().mean():.2f}g")
             elif health_condition == "High Blood Pressure":
                 st.write(f"Average Sodium Content: {result['SodiumContent'].head().mean():.2f}mg")
             elif health_condition == "High Cholesterol":
@@ -199,7 +198,6 @@ def recommend_food(input_data, df, models, excluded_indices=None):
                 st.write(f"Target Protein per Meal: {user_weight/3:.2f}g")
             elif wellness_goal == "Lose Weight":
                 st.write(f"Average Fat Content: {result['FatContent'].head().mean():.2f}g")
-                st.write(f"Average Fiber Content: {result['FiberContent'].head().mean():.2f}g")
         
         return result
                                     
