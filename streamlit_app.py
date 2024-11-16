@@ -206,7 +206,7 @@ def format_recipe_instructions(instructions):
 def display_recommendations(recommendations):
     """Display recommendations in a vertical format with expandable recipe instructions."""
     if not recommendations.empty:
-        st.write("### 🍳 Recommended Food Items")
+        st.write("### 🍳 Recommended Food Items (Single Serving)")
         
         # Display each recipe in a vertical format
         for idx, row in recommendations.iterrows():
