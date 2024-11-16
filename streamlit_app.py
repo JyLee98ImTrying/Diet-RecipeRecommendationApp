@@ -9,52 +9,10 @@ from sklearn.metrics.pairwise import cosine_similarity
 # Clear cache to ensure fresh data loading
 st.cache_data.clear()
 
-def check_dataframe_columns(df):
-    """Check and report the status of required and optional columns in the DataFrame."""
-    required_columns = {
-        'Name', 'Calories', 'ProteinContent', 'FatContent', 'CarbohydrateContent', 
-        'SodiumContent', 'CholesterolContent', 'SaturatedFatContent', 'SugarContent'
-    }
-    
-    optional_columns = {
-        'TotalTime', 'RecipeIngredientQuantities', 'RecipeIngredientParts', 
-        'RecipeInstructions'
-    }
-    
-    # Check actual columns in DataFrame
-    actual_columns = set(df.columns)
-    
-    # Check required columns
-    missing_required = required_columns - actual_columns
-    if missing_required:
-        st.error(f"Missing required columns: {', '.join(missing_required)}")
-        return False
-        
-    # Check optional columns
-    missing_optional = optional_columns - actual_columns
-    if missing_optional:
-        st.warning(f"Missing optional columns: {', '.join(missing_optional)}")
-    
-    present_columns = actual_columns.intersection(required_columns.union(optional_columns))
-    st.success(f"Present columns: {', '.join(present_columns)}")
-    
-    # Display all columns for debugging
-    st.write("All available columns in DataFrame:", df.columns.tolist())
-    
-    return True
-
 def load_data():
     try:
         url = 'https://raw.githubusercontent.com/JyLee98ImTrying/Diet-RecipeRecommendationApp/master/df_sample.csv'
         df = pd.read_csv(url, delimiter=',', encoding='utf-8', on_bad_lines='skip')
-        
-        # Run column check
-        st.write("### Checking DataFrame Columns")
-        columns_ok = check_dataframe_columns(df)
-        
-        if not columns_ok:
-            st.error("Critical columns are missing. Please check your data source.")
-            return None
         
         if 'Cluster' not in df.columns and 'kmeans' in st.session_state.get('models', {}):
             features = df[['Calories', 'ProteinContent', 'FatContent', 
@@ -100,10 +58,18 @@ def format_recipe_instructions(instructions):
 
 def combine_ingredients(quantities, parts):
     """Combine ingredient quantities and parts into natural language format."""
-    if not isinstance(quantities, str) or not isinstance(parts, str):
+    if pd.isna(quantities) or pd.isna(parts):
         return []
-    
+        
     try:
+        # Clean and split quantities
+        quantities = str(quantities)  # Convert to string explicitly
+        parts = str(parts)  # Convert to string explicitly
+        
+        # Debug prints
+        st.write("Debug - Raw quantities:", quantities)
+        st.write("Debug - Raw parts:", parts)
+        
         # Clean and split quantities
         quantities = quantities.replace('c(', '').replace(')', '').split('",')
         quantities = [q.strip().strip('"') for q in quantities]
@@ -111,6 +77,10 @@ def combine_ingredients(quantities, parts):
         # Clean and split parts
         parts = parts.replace('c(', '').replace(')', '').split('",')
         parts = [p.strip().strip('"') for p in parts]
+        
+        # Debug prints
+        st.write("Debug - Processed quantities:", quantities)
+        st.write("Debug - Processed parts:", parts)
         
         # Combine quantities and parts
         ingredients = []
@@ -121,7 +91,8 @@ def combine_ingredients(quantities, parts):
                 ingredients.append(f"{q} {p}")
         
         return ingredients
-    except:
+    except Exception as e:
+        st.error(f"Error processing ingredients: {str(e)}")
         return []
 
 def calculate_caloric_needs(gender, weight, height, age):
@@ -328,37 +299,65 @@ def display_recommendations(recommendations):
         
         # Display each recipe in a vertical format
         for idx, row in recommendations.iterrows():
-            with st.expander(f"📗 {row['Name']}"):
-                # Create two columns for better layout
-                col1, col2 = st.columns(2)
+            try:
+                with st.expander(f"📗 {row['Name']}"):
+                    # Display cooking time if available
+                    try:
+                        if not pd.isna(row.get('TotalTime')):
+                            st.write("**⏱️ Cooking Time**")
+                            st.write(format_time(row['TotalTime']))
+                    except Exception as e:
+                        st.warning(f"Could not display cooking time: {str(e)}")
+                    
+                    # Create two columns for better layout
+                    col1, col2 = st.columns(2)
+                    
+                    # Nutritional Information in first column
+                    with col1:
+                        st.write("**📊 Nutritional Information**")
+                        st.write(f"• Calories: {row['Calories']:.1f}")
+                        st.write(f"• Protein: {row['ProteinContent']:.1f}g")
+                        st.write(f"• Fat: {row['FatContent']:.1f}g")
+                        st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
+                    
+                    # Additional nutritional details in second column
+                    with col2:
+                        st.write("**🔍 Additional Details**")
+                        st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
+                        st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
+                        st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
+                        st.write(f"• Sugar: {row['SugarContent']:.1f}g")
+                    
+                    # Debug print for ingredients data
+                    st.write("Debug - Row data types:", {col: type(row[col]) for col in ['RecipeIngredientQuantities', 'RecipeIngredientParts'] if col in row})
+                    
+                    # Ingredients if available
+                    try:
+                        if 'RecipeIngredientQuantities' in row.index and 'RecipeIngredientParts' in row.index:
+                            quantities = row['RecipeIngredientQuantities']
+                            parts = row['RecipeIngredientParts']
+                            
+                            if not (pd.isna(quantities) or pd.isna(parts)):
+                                st.write("**🧂 Ingredients**")
+                                ingredients = combine_ingredients(quantities, parts)
+                                for ingredient in ingredients:
+                                    st.write(f"• {ingredient}")
+                    except Exception as e:
+                        st.warning(f"Could not display ingredients: {str(e)}")
+                    
+                    # Recipe Instructions
+                    try:
+                        if 'RecipeInstructions' in row.index and not pd.isna(row['RecipeInstructions']):
+                            st.write("**👩‍🍳 Recipe Instructions**")
+                            instructions = format_recipe_instructions(row['RecipeInstructions'])
+                            for i, step in enumerate(instructions, 1):
+                                st.write(f"{i}. {step}")
+                    except Exception as e:
+                        st.warning(f"Could not display instructions: {str(e)}")
+                        
+            except Exception as e:
+                st.error(f"Error displaying recipe: {str(e)}")
                 
-                # Nutritional Information in first column
-                with col1:
-                    st.write("**📊 Nutritional Information**")
-                    st.write(f"• Calories: {row['Calories']:.1f}")
-                    st.write(f"• Protein: {row['ProteinContent']:.1f}g")
-                    st.write(f"• Fat: {row['FatContent']:.1f}g")
-                    st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
-                
-                # Additional nutritional details in second column
-                with col2:
-                    st.write("**🔍 Additional Details**")
-                    st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
-                    st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
-                    st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
-                    st.write(f"• Sugar: {row['SugarContent']:.1f}g")
-
-                 # Ingredients
-                st.write("**🧂 Ingredients**")
-                ingredients = combine_ingredients(row['RecipeIngredientQuantities'], row['RecipeIngredientParts'])
-                for ingredient in ingredients:
-                    st.write(f"• {ingredient}")
-                
-                # Recipe Instructions
-                st.write("**👩‍🍳 Recipe Instructions**")
-                instructions = format_recipe_instructions(row['RecipeInstructions'])
-                for i, step in enumerate(instructions, 1):
-                    st.write(f"{i}. {step}")
     else:
         st.warning("No recommendations found. Please try different inputs.")
 
