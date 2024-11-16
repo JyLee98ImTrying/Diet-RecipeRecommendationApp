@@ -9,6 +9,40 @@ from sklearn.metrics.pairwise import cosine_similarity
 # Clear cache to ensure fresh data loading
 st.cache_data.clear()
 
+def check_dataframe_columns(df):
+    """Check and report the status of required and optional columns in the DataFrame."""
+    required_columns = {
+        'Name', 'Calories', 'ProteinContent', 'FatContent', 'CarbohydrateContent', 
+        'SodiumContent', 'CholesterolContent', 'SaturatedFatContent', 'SugarContent'
+    }
+    
+    optional_columns = {
+        'TotalTime', 'RecipeIngredientQuantities', 'RecipeIngredientParts', 
+        'RecipeInstructions'
+    }
+    
+    # Check actual columns in DataFrame
+    actual_columns = set(df.columns)
+    
+    # Check required columns
+    missing_required = required_columns - actual_columns
+    if missing_required:
+        st.error(f"Missing required columns: {', '.join(missing_required)}")
+        return False
+        
+    # Check optional columns
+    missing_optional = optional_columns - actual_columns
+    if missing_optional:
+        st.warning(f"Missing optional columns: {', '.join(missing_optional)}")
+    
+    present_columns = actual_columns.intersection(required_columns.union(optional_columns))
+    st.success(f"Present columns: {', '.join(present_columns)}")
+    
+    # Display all columns for debugging
+    st.write("All available columns in DataFrame:", df.columns.tolist())
+    
+    return True
+
 def load_data():
     try:
         url = 'https://raw.githubusercontent.com/JyLee98ImTrying/Diet-RecipeRecommendationApp/master/df_sample.csv'
