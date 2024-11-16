@@ -254,6 +254,13 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         st.error(f"Error in recommendation process: {str(e)}")
         st.write("Full error details:", e)
         return pd.DataFrame()
+
+def debug_dataframe(df):
+    """Print debug information about the DataFrame"""
+    st.write("### DataFrame Debug Information")
+    st.write("Columns:", df.columns.tolist())
+    st.write("Data Types:", df.dtypes.to_dict())
+    st.write("First row:", df.iloc[0].to_dict())
         
 # Streamlit UI
 st.title('🍅🧀MyHealthMyFood🥑🥬')
@@ -392,6 +399,7 @@ if st.button("Get Recommendations"):
     st.session_state.current_weight = weight
     st.session_state.current_health_condition = health_condition
 
+    debug_dataframe(recommendations)
     
     # Get initial recommendations
     recommendations = recommend_food(input_features, df, models)
