@@ -48,6 +48,14 @@ def load_data():
         url = 'https://raw.githubusercontent.com/JyLee98ImTrying/Diet-RecipeRecommendationApp/master/df_sample.csv'
         df = pd.read_csv(url, delimiter=',', encoding='utf-8', on_bad_lines='skip')
         
+        # Run column check
+        st.write("### Checking DataFrame Columns")
+        columns_ok = check_dataframe_columns(df)
+        
+        if not columns_ok:
+            st.error("Critical columns are missing. Please check your data source.")
+            return None
+        
         if 'Cluster' not in df.columns and 'kmeans' in st.session_state.get('models', {}):
             features = df[['Calories', 'ProteinContent', 'FatContent', 
                          'CarbohydrateContent', 'SodiumContent', 
