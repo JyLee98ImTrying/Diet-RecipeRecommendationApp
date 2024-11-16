@@ -46,6 +46,60 @@ def load_models():
         st.error(f"Error loading models: {str(e)}")
         return None
 
+def format_recipe_instructions(instructions):
+    """Format recipe instructions from c() format to numbered list."""
+    if not isinstance(instructions, str):
+        return []
+    # Remove c() wrapper and split by commas
+    instructions = instructions.replace('c(', '').replace(')', '')
+    # Split by '", ' and clean up remaining quotes
+    steps = [step.strip().strip('"') for step in instructions.split('",')]
+    return steps
+
+def format_time(time_str):
+    """Format time from HH.MM format to natural language."""
+    if pd.isna(time_str):
+        return "Time not specified"
+    try:
+        hours = int(float(time_str))
+        minutes = int((float(time_str) % 1) * 100)
+        
+        time_parts = []
+        if hours > 0:
+            time_parts.append(f"{hours} hour{'s' if hours > 1 else ''}")
+        if minutes > 0:
+            time_parts.append(f"{minutes} minute{'s' if minutes > 1 else ''}")
+        
+        return " and ".join(time_parts) if time_parts else "Time not specified"
+    except:
+        return "Time not specified"
+
+def combine_ingredients(quantities, parts):
+    """Combine ingredient quantities and parts into natural language format."""
+    if not isinstance(quantities, str) or not isinstance(parts, str):
+        return []
+    
+    try:
+        # Clean and split quantities
+        quantities = quantities.replace('c(', '').replace(')', '').split('",')
+        quantities = [q.strip().strip('"') for q in quantities]
+        
+        # Clean and split parts
+        parts = parts.replace('c(', '').replace(')', '').split('",')
+        parts = [p.strip().strip('"') for p in parts]
+        
+        # Combine quantities and parts
+        ingredients = []
+        for q, p in zip(quantities, parts):
+            if pd.isna(q) or q.lower() == 'na':
+                ingredients.append(p)
+            else:
+                ingredients.append(f"{q} {p}")
+        
+        return ingredients
+    except:
+        return []
+
 def calculate_caloric_needs(gender, weight, height, age):
     if gender == "Female":
         BMR = 655 + (9.6 * weight) + (1.8 * height) - (4.7 * age)
@@ -251,6 +305,9 @@ def display_recommendations(recommendations):
         # Display each recipe in a vertical format
         for idx, row in recommendations.iterrows():
             with st.expander(f"📗 {row['Name']}"):
+                # Display cooking time
+                st.write("**⏱️ Cooking Time**")
+                st.write(format_time(row['TotalTime']))
                 # Create two columns for better layout
                 col1, col2 = st.columns(2)
                 
@@ -269,6 +326,12 @@ def display_recommendations(recommendations):
                     st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
                     st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
                     st.write(f"• Sugar: {row['SugarContent']:.1f}g")
+
+                 # Ingredients
+                st.write("**🧂 Ingredients**")
+                ingredients = combine_ingredients(row['RecipeIngredientQuantities'], row['RecipeIngredientParts'])
+                for ingredient in ingredients:
+                    st.write(f"• {ingredient}")
                 
                 # Recipe Instructions
                 st.write("**👩‍🍳 Recipe Instructions**")
