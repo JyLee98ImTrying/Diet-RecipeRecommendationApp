@@ -373,7 +373,6 @@ def display_recommendations(recommendations):
     else:
         st.warning("No recommendations found. Please try different inputs.")
 
-# In your main code, replace the recommendation display section with this:
 if st.button("Get Recommendations"):
     daily_calories = calculate_caloric_needs(gender, weight, height, age)
     protein_grams = 0.8 * weight
@@ -383,7 +382,6 @@ if st.button("Get Recommendations"):
     carb_grams = carb_calories / 4
     meal_fraction = 0.3
     
-    # Reset previous recommendations when getting new recommendations
     st.session_state.previous_recommendations = set()
     
     input_features = np.array([
@@ -436,5 +434,8 @@ if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'all_rec
             st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
     else:
         st.warning("Please get initial recommendations first.")
+
+st.write("Raw quantities:", quantities)
+st.write("Raw parts:", parts)
 
 
