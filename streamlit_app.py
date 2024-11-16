@@ -21,10 +21,6 @@ def load_data():
                          'CholesterolContent', 'SaturatedFatContent', 'FiberContent', 'SugarContent']]
             scaled_features = st.session_state['models']['scaler'].transform(features)
             df['Cluster'] = st.session_state['models']['kmeans'].predict(scaled_features)
-
-        if df is not None:
-            st.write("First row of DataFrame:")
-            st.write(df.iloc[0])
         
         st.session_state['df'] = df
         return df
@@ -63,47 +59,39 @@ def format_recipe_instructions(instructions):
 
 def combine_ingredients(quantities, parts):
     """Combine ingredient quantities and parts into natural language format."""
-    # Debug prints
-    st.write("Debug - Raw quantities type:", type(quantities))
-    st.write("Debug - Raw quantities:", quantities)
-    st.write("Debug - Raw parts type:", type(parts))
-    st.write("Debug - Raw parts:", parts)
-    
     if pd.isna(quantities) or pd.isna(parts):
         return []
         
     try:
-        # Clean and process inputs
-        def clean_input(text):
-            if isinstance(text, str):
-                # Remove any brackets
-                text = text.replace('{', '').replace('}', '')
-                # Split by comma and clean
-                items = [item.strip().strip('"').strip("'") for item in text.split(',')]
-                # Remove empty items
-                return [item for item in items if item]
-            return []
+        # Function to parse R-style c() format
+        def parse_r_vector(text):
+            if not isinstance(text, str):
+                return []
+            # Remove c() wrapper
+            text = text.replace('c(', '').replace(')', '')
+            # Split by commas and clean up
+            items = text.split(',')
+            # Clean each item
+            cleaned = []
+            for item in items:
+                item = item.strip().strip('"').strip("'")
+                if item.upper() != 'NA':  # Skip NA values
+                    cleaned.append(item)
+            return cleaned
 
-        # Process quantities and parts
-        quantities_list = clean_input(quantities)
-        parts_list = clean_input(parts)
-        
-        st.write("Debug - Processed quantities:", quantities_list)
-        st.write("Debug - Processed parts:", parts_list)
+        # Parse quantities and parts
+        quantities_list = parse_r_vector(quantities)
+        parts_list = parse_r_vector(parts)
         
         # Combine quantities and parts
         ingredients = []
-        for i in range(max(len(quantities_list), len(parts_list))):
-            q = quantities_list[i] if i < len(quantities_list) else ''
-            p = parts_list[i] if i < len(parts_list) else ''
-            
-            if not q or q.lower() == 'na':
+        for q, p in zip_longest(quantities_list, parts_list, fillvalue=''):
+            if not q or q.upper() == 'NA':
                 if p:
                     ingredients.append(p)
             else:
                 ingredients.append(f"{q} {p}".strip())
         
-        st.write("Debug - Final ingredients:", ingredients)
         return [ing for ing in ingredients if ing]
         
     except Exception as e:
