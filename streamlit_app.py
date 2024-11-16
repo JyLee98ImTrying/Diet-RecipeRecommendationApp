@@ -56,24 +56,6 @@ def format_recipe_instructions(instructions):
     steps = [step.strip().strip('"') for step in instructions.split('",')]
     return steps
 
-def format_time(time_str):
-    """Format time from HH.MM format to natural language."""
-    if pd.isna(time_str):
-        return "Time not specified"
-    try:
-        hours = int(float(time_str))
-        minutes = int((float(time_str) % 1) * 100)
-        
-        time_parts = []
-        if hours > 0:
-            time_parts.append(f"{hours} hour{'s' if hours > 1 else ''}")
-        if minutes > 0:
-            time_parts.append(f"{minutes} minute{'s' if minutes > 1 else ''}")
-        
-        return " and ".join(time_parts) if time_parts else "Time not specified"
-    except:
-        return "Time not specified"
-
 def combine_ingredients(quantities, parts):
     """Combine ingredient quantities and parts into natural language format."""
     if not isinstance(quantities, str) or not isinstance(parts, str):
@@ -305,9 +287,6 @@ def display_recommendations(recommendations):
         # Display each recipe in a vertical format
         for idx, row in recommendations.iterrows():
             with st.expander(f"📗 {row['Name']}"):
-                # Display cooking time
-                st.write("**⏱️ Cooking Time**")
-                st.write(format_time(row['TotalTime']))
                 # Create two columns for better layout
                 col1, col2 = st.columns(2)
                 
