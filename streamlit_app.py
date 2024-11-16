@@ -58,61 +58,55 @@ def format_recipe_instructions(instructions):
     return steps
 
 def combine_ingredients(quantities, parts):
-    """
-    Combine ingredient quantities and parts into natural language format.
-    Handles various input formats including curly bracket notation.
-    """
+    """Combine ingredient quantities and parts into natural language format."""
+    # Debug prints
+    st.write("Debug - Raw quantities type:", type(quantities))
+    st.write("Debug - Raw quantities:", quantities)
+    st.write("Debug - Raw parts type:", type(parts))
+    st.write("Debug - Raw parts:", parts)
+    
     if pd.isna(quantities) or pd.isna(parts):
         return []
         
     try:
-        # Convert both inputs to string
-        quantities = str(quantities)
-        parts = str(parts)
+        # Clean and process inputs
+        def clean_input(text):
+            if isinstance(text, str):
+                # Remove any brackets
+                text = text.replace('{', '').replace('}', '')
+                # Split by comma and clean
+                items = [item.strip().strip('"').strip("'") for item in text.split(',')]
+                # Remove empty items
+                return [item for item in items if item]
+            return []
+
+        # Process quantities and parts
+        quantities_list = clean_input(quantities)
+        parts_list = clean_input(parts)
         
-        # Clean curly bracket format
-        def clean_bracket_format(text):
-            # Remove curly brackets
-            text = text.replace('{', '').replace('}', '')
-            # Split by commas, handling potential quoted strings
-            items = []
-            current_item = ''
-            in_quotes = False
-            
-            for char in text:
-                if char == '"':
-                    in_quotes = not in_quotes
-                    current_item += char
-                elif char == ',' and not in_quotes:
-                    items.append(current_item.strip())
-                    current_item = ''
-                else:
-                    current_item += char
-            
-            if current_item:
-                items.append(current_item.strip())
-                
-            # Clean up quotes and extra whitespace
-            return [item.strip().strip('"').strip("'") for item in items if item.strip()]
-        
-        # Clean and split both quantities and parts
-        quantities_list = clean_bracket_format(quantities)
-        parts_list = clean_bracket_format(parts)
+        st.write("Debug - Processed quantities:", quantities_list)
+        st.write("Debug - Processed parts:", parts_list)
         
         # Combine quantities and parts
         ingredients = []
-        for q, p in zip_longest(quantities_list, parts_list, fillvalue=''):
+        for i in range(max(len(quantities_list), len(parts_list))):
+            q = quantities_list[i] if i < len(quantities_list) else ''
+            p = parts_list[i] if i < len(parts_list) else ''
+            
             if not q or q.lower() == 'na':
                 if p:
                     ingredients.append(p)
             else:
                 ingredients.append(f"{q} {p}".strip())
         
-        return [ing for ing in ingredients if ing]  # Remove any empty strings
+        st.write("Debug - Final ingredients:", ingredients)
+        return [ing for ing in ingredients if ing]
         
     except Exception as e:
         st.error(f"Error processing ingredients: {str(e)}")
         return []
+
+
 def calculate_caloric_needs(gender, weight, height, age):
     if gender == "Female":
         BMR = 655 + (9.6 * weight) + (1.8 * height) - (4.7 * age)
