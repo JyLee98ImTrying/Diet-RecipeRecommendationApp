@@ -341,14 +341,39 @@ def display_recommendations(recommendations):
                             quantities = row['RecipeIngredientQuantities']
                             parts = row['RecipeIngredientParts']
                             
+                            # Debug prints
+                            st.write("Debug - Raw quantities:", quantities)
+                            st.write("Debug - Raw parts:", parts)
+                            
                             if not (pd.isna(quantities) or pd.isna(parts)):
                                 st.write("**🧂 Ingredients**")
-                                ingredients = combine_ingredients(quantities, parts)
-                                for ingredient in ingredients:
-                                    st.write(f"• {ingredient}")
+                                
+                                # Check if quantities and parts start with 'c('
+                                if isinstance(quantities, str) and quantities.startswith('c('):
+                                    # Remove c() wrapper and split by commas
+                                    quantities = quantities.replace('c(', '').replace(')', '')
+                                    quantities = [q.strip().strip('"').strip("'") for q in quantities.split(',')]
+                                
+                                if isinstance(parts, str) and parts.startswith('c('):
+                                    # Remove c() wrapper and split by commas
+                                    parts = parts.replace('c(', '').replace(')', '')
+                                    parts = [p.strip().strip('"').strip("'") for p in parts.split(',')]
+                                
+                                # Debug prints
+                                st.write("Debug - Processed quantities:", quantities)
+                                st.write("Debug - Processed parts:", parts)
+                                
+                                if isinstance(quantities, list) and isinstance(parts, list):
+                                    for q, p in zip_longest(quantities, parts, fillvalue=''):
+                                        if q.upper() != 'NA' and q:
+                                            st.write(f"• {q} {p}")
+                                        else:
+                                            st.write(f"• {p}")
+                                else:
+                                    st.warning("Ingredients data is not in the expected format")
+                                    
                     except Exception as e:
                         st.warning(f"Could not display ingredients: {str(e)}")
-                    
                     # Recipe Instructions
                     try:
                         if 'RecipeInstructions' in row.index and not pd.isna(row['RecipeInstructions']):
