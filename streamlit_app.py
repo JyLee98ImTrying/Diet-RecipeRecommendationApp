@@ -21,6 +21,10 @@ def load_data():
                          'CholesterolContent', 'SaturatedFatContent', 'FiberContent', 'SugarContent']]
             scaled_features = st.session_state['models']['scaler'].transform(features)
             df['Cluster'] = st.session_state['models']['kmeans'].predict(scaled_features)
+
+        if df is not None:
+            st.write("First row of DataFrame:")
+            st.write(df.iloc[0])
         
         st.session_state['df'] = df
         return df
