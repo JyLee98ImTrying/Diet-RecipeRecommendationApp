@@ -408,7 +408,7 @@ elif page == "🔎Search & Visualize📊":
 
     # Search Function
     st.subheader("Search for Recipes")
-    search_query = st.text_input("Enter a keyword to search for recipes:")+
+    search_query = st.text_input("Enter a keyword to search for recipes:")
 
     if search_query:
         # Filter recipes based on the search query
