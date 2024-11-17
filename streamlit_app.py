@@ -448,8 +448,14 @@ if search_query:
 
     # Define a helper function to format recipe instructions
     def format_recipe_instructions(instructions):
-        """Split the recipe instructions into steps."""
-        return instructions.split('.') if isinstance(instructions, str) else []
+    """Format recipe instructions from c() format to numbered list."""
+    if not isinstance(instructions, str):
+        return []
+    # Remove c() wrapper and split by commas
+    instructions = instructions.replace('c(', '').replace(')', '')
+    # Split by '", ' and clean up remaining quotes
+    steps = [step.strip().strip('"') for step in instructions.split('",')]
+    return steps
 
     # Get current page and number of results to display
     start_index = st.session_state['search_page'] * 5
