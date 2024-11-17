@@ -403,7 +403,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
 
 # Search and Visualization Page
 elif page == "🔎Search & Visualize📊":
-    st.title("🔎Search & Visualize📊")
+        st.title("🔎Search & Visualize📊")
 
 # Initialize session state for pagination
 if 'search_page' not in st.session_state:
