@@ -410,6 +410,17 @@ elif page == "🔎Search & Visualize📊":
 if 'search_page' not in st.session_state:
     st.session_state['search_page'] = 0
 
+# Define the format_recipe_instructions function
+def format_recipe_instructions(instructions):
+    """Format recipe instructions from c() format to numbered list."""
+    if not isinstance(instructions, str):
+        return []
+    # Remove c() wrapper and split by commas
+    instructions = instructions.replace('c(', '').replace(')', '')
+    # Split by '", ' and clean up remaining quotes
+    steps = [step.strip().strip('"') for step in instructions.split('",')]
+    return steps
+
 # Search Function
 st.subheader("Search for Recipes")
 search_query = st.text_input("Enter a keyword to search for recipes:")
@@ -445,17 +456,6 @@ if search_query:
                         st.write(f"{i}. {step}")
         else:
             st.warning("No recipes found. Please try a different keyword.")
-
-    # Define a helper function to format recipe instructions
-    def format_recipe_instructions(instructions):
-    """Format recipe instructions from c() format to numbered list."""
-    if not isinstance(instructions, str):
-        return []
-    # Remove c() wrapper and split by commas
-    instructions = instructions.replace('c(', '').replace(')', '')
-    # Split by '", ' and clean up remaining quotes
-    steps = [step.strip().strip('"') for step in instructions.split('",')]
-    return steps
 
     # Get current page and number of results to display
     start_index = st.session_state['search_page'] * 5
