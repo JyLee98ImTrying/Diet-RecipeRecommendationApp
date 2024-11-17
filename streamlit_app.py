@@ -260,8 +260,8 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         return pd.DataFrame()
 
 # Sidebar for Page Navigation
-st.sidebar.title("Navigation")
-page = st.sidebar.radio("Go to:", ["🍅🧀MyHealthMyFood🥑🥬", "🔎Search & 📊Visualize"])
+with st.sidebar.expander("Navigation", expanded=True):
+    page = st.radio("Go to:", ["🍅🧀MyHealthMyFood🥑🥬", "🔎Search & Visualize📊"])
 
 # Streamlit UI (Recommendation Page)
 if page == "🍅🧀MyHealthMyFood🥑🥬":
@@ -458,8 +458,8 @@ if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'all_rec
         st.warning("Please get initial recommendations first.")
 
 # Search and Visualization Page
-elif page == "Search & Visualize":
-    st.title("🔍 Search Recipes & 📊 Visualize Data")
+elif page == "🔎Search & Visualize📊":
+    st.title("🔎Search & Visualize📊")
     
     # Search Function
     st.subheader("Search for Recipes")
