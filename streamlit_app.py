@@ -476,33 +476,33 @@ if search_query:
                 st.session_state['search_page'] += 1
     
     # Visualization Options
-    st.subheader("Visualizations")
-    visualization_type = st.selectbox(
-        "Choose a visualization:",
-        ["Select an option", "Ingredient Distribution", "Nutrient Comparison"]
-    )
+st.subheader("Visualizations")
+visualization_type = st.selectbox(
+    "Choose a visualization:",
+    ["Select an option", "Ingredient Distribution", "Nutrient Comparison"]
+)
     
-    if visualization_type == "Ingredient Distribution":
-        st.write("### Ingredient Distribution")
-        ingredient_column = st.selectbox(
-            "Select an ingredient column:",
-            ["SugarContent", "ProteinContent", "FatContent", "FiberContent", "SodiumContent"]
-        )
-        if ingredient_column:
-            try:
-                # Plot histogram
-                st.bar_chart(df[ingredient_column].value_counts())
-            except Exception as e:
-                st.error(f"Error plotting {ingredient_column}: {str(e)}")
+if visualization_type == "Ingredient Distribution":
+    st.write("### Ingredient Distribution")
+    ingredient_column = st.selectbox(
+        "Select an ingredient column:",
+        ["SugarContent", "ProteinContent", "FatContent", "FiberContent", "SodiumContent"]
+    )
+    if ingredient_column:
+        try:
+            # Plot histogram
+            st.bar_chart(df[ingredient_column].value_counts())
+        except Exception as e:
+            st.error(f"Error plotting {ingredient_column}: {str(e)}")
 
-    elif visualization_type == "Nutrient Comparison":
-        st.write("### Nutrient Comparison")
-        nutrients = ["Calories", "ProteinContent", "FatContent", "CarbohydrateContent", "SugarContent"]
-        nutrient1 = st.selectbox("Select first nutrient:", nutrients)
-        nutrient2 = st.selectbox("Select second nutrient:", nutrients)
+elif visualization_type == "Nutrient Comparison":
+    st.write("### Nutrient Comparison")
+    nutrients = ["Calories", "ProteinContent", "FatContent", "CarbohydrateContent", "SugarContent"]
+    nutrient1 = st.selectbox("Select first nutrient:", nutrients)
+    nutrient2 = st.selectbox("Select second nutrient:", nutrients)
         
-        if nutrient1 and nutrient2:
-            try:
-                st.line_chart(df[[nutrient1, nutrient2]])
-            except Exception as e:
-                st.error(f"Error comparing {nutrient1} and {nutrient2}: {str(e)}")
+    if nutrient1 and nutrient2:
+        try:
+            st.line_chart(df[[nutrient1, nutrient2]])
+        except Exception as e:
+            st.error(f"Error comparing {nutrient1} and {nutrient2}: {str(e)}")
