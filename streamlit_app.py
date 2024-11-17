@@ -439,33 +439,45 @@ elif page == "🔎Search & Visualize📊":
         search_results = df[df['Name'].str.contains(search_query, case=False, na=False)]
     
         # Define a helper function to display a subset of recommendations
-        def display_recommendations(recommendations, start_index, num_items=5):
-            """Display a subset of recommendations."""
-            if not recommendations.empty:
-                # Limit to the current page's results
-                page_results = recommendations.iloc[start_index:start_index + num_items]
-                for idx, row in page_results.iterrows():
-                    with st.expander(f"📗 {row['Name']}"):
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.write("**📊 Nutritional Information**")
-                            st.write(f"• Calories: {row['Calories']:.1f}")
-                            st.write(f"• Protein: {row['ProteinContent']:.1f}g")
-                            st.write(f"• Fat: {row['FatContent']:.1f}g")
-                            st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
-                        with col2:
-                            st.write("**🔍 Additional Details**")
-                            st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
-                            st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
-                            st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
-                            st.write(f"• Sugar: {row['SugarContent']:.1f}g")
-                        st.write("**👩‍🍳 Recipe Instructions**")
-                        instructions = format_recipe_instructions(row['RecipeInstructions'])
-                        for i, step in enumerate(instructions, 1):
-                            st.write(f"{i}. {step}")
-            else:
-                st.warning("No recipes found. Please try a different keyword.")
-    
+       def display_search_recommendations(recommendations, start_index, num_items=5):
+    """Display a subset of recommendations with ingredients."""
+    if not recommendations.empty:
+        # Limit to the current page's results
+        page_results = recommendations.iloc[start_index:start_index + num_items]
+        for idx, row in page_results.iterrows():
+            with st.expander(f"📗 {row['Name']}"):
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write("**📊 Nutritional Information**")
+                    st.write(f"• Calories: {row['Calories']:.1f}")
+                    st.write(f"• Protein: {row['ProteinContent']:.1f}g")
+                    st.write(f"• Fat: {row['FatContent']:.1f}g")
+                    st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
+                with col2:
+                    st.write("**🔍 Additional Details**")
+                    st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
+                    st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
+                    st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
+                    st.write(f"• Sugar: {row['SugarContent']:.1f}g")
+                
+                # Ingredients section
+                st.write("**🥗 Ingredients**")
+                ingredients = combine_ingredients(
+                    row.get('RecipeIngredientQuantities', ''), 
+                    row.get('RecipeIngredientParts', '')
+                )
+                if ingredients:
+                    for ingredient in ingredients:
+                        st.write(f"• {ingredient}")
+                else:
+                    st.write("No ingredient information available")
+                
+                st.write("**👩‍🍳 Recipe Instructions**")
+                instructions = format_recipe_instructions(row['RecipeInstructions'])
+                for i, step in enumerate(instructions, 1):
+                    st.write(f"{i}. {step}")
+    else:
+        st.warning("No recipes found. Please try a different keyword.")
         # Get current page and number of results to display
         start_index = st.session_state['search_page'] * 5
     
