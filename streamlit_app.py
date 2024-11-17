@@ -406,7 +406,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
 elif page == "🔎Search & Visualize📊":
     st.title("🔎Search & Visualize📊")
     
-    if search_query:
+if search_query:
     # Filter recipes based on the search query
     search_results = df[df['Name'].str.contains(search_query, case=False, na=False)]
     
