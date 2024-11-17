@@ -302,39 +302,52 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         return steps
     
     def display_recommendations(recommendations):
-        """Display recommendations in a vertical format with expandable recipe instructions."""
-        if not recommendations.empty:
-            st.write("### 🍳 Recommended Food Items (Single Serving)")
-            
-            # Display each recipe in a vertical format
-            for idx, row in recommendations.iterrows():
-                with st.expander(f"📗 {row['Name']}"):
-                    # Create two columns for better layout
-                    col1, col2 = st.columns(2)
-                    
-                    # Nutritional Information in first column
-                    with col1:
-                        st.write("**📊 Nutritional Information**")
-                        st.write(f"• Calories: {row['Calories']:.1f}")
-                        st.write(f"• Protein: {row['ProteinContent']:.1f}g")
-                        st.write(f"• Fat: {row['FatContent']:.1f}g")
-                        st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
-                    
-                    # Additional nutritional details in second column
-                    with col2:
-                        st.write("**🔍 Additional Details**")
-                        st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
-                        st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
-                        st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
-                        st.write(f"• Sugar: {row['SugarContent']:.1f}g")
-                    
-                    # Recipe Instructions
-                    st.write("**👩‍🍳 Recipe Instructions**")
-                    instructions = format_recipe_instructions(row['RecipeInstructions'])
-                    for i, step in enumerate(instructions, 1):
-                        st.write(f"{i}. {step}")
-        else:
-            st.warning("No recommendations found. Please try different inputs.")
+    """Display recommendations in a vertical format with expandable recipe instructions."""
+    if not recommendations.empty:
+        st.write("### 🍳 Recommended Food Items (Single Serving)")
+        
+        # Display each recipe in a vertical format
+        for idx, row in recommendations.iterrows():
+            with st.expander(f"📗 {row['Name']}"):
+                # Create three columns for better layout
+                col1, col2 = st.columns(2)
+                
+                # Nutritional Information in first column
+                with col1:
+                    st.write("**📊 Nutritional Information**")
+                    st.write(f"• Calories: {row['Calories']:.1f}")
+                    st.write(f"• Protein: {row['ProteinContent']:.1f}g")
+                    st.write(f"• Fat: {row['FatContent']:.1f}g")
+                    st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
+                
+                # Additional nutritional details in second column
+                with col2:
+                    st.write("**🔍 Additional Details**")
+                    st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
+                    st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
+                    st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
+                    st.write(f"• Sugar: {row['SugarContent']:.1f}g")
+                
+                # Ingredients section
+                st.write("**🥗 Ingredients**")
+                ingredients = combine_ingredients(
+                    row.get('RecipeIngredientQuantities', ''), 
+                    row.get('RecipeIngredientParts', '')
+                )
+                if ingredients:
+                    for ingredient in ingredients:
+                        st.write(f"• {ingredient}")
+                else:
+                    st.write("No ingredient information available")
+                
+                # Recipe Instructions
+                st.write("**👩‍🍳 Recipe Instructions**")
+                instructions = format_recipe_instructions(row['RecipeInstructions'])
+                for i, step in enumerate(instructions, 1):
+                    st.write(f"{i}. {step}")
+    else:
+        st.warning("No recommendations found. Please try different inputs.")
+
     
     # In your main code, replace the recommendation display section with this:
     if st.button("Get Recommendations"):
