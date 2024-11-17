@@ -406,68 +406,68 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
 elif page == "🔎Search & Visualize📊":
     st.title("🔎Search & Visualize📊")
 
-    # Initialize session state for pagination
-    if 'search_page' not in st.session_state:
-        st.session_state['search_page'] = 0
-        
-        # Search Function
-        st.subheader("Search for Recipes")
-        search_query = st.text_input("Enter a keyword to search for recipes:")
-    
-        if search_query:
-            # Filter recipes based on the search query
-            search_results = df[df['Name'].str.contains(search_query, case=False, na=False)]
-            
-           # Define a helper function to display a subset of recommendations
-        def display_recommendations(recommendations, start_index, num_items=5):
-            """Display a subset of recommendations."""
-            if not recommendations.empty:
-                # Limit to the current page's results
-                page_results = recommendations.iloc[start_index:start_index + num_items]
-                for idx, row in page_results.iterrows():
-                    with st.expander(f"📗 {row['Name']}"):
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.write("**📊 Nutritional Information**")
-                            st.write(f"• Calories: {row['Calories']:.1f}")
-                            st.write(f"• Protein: {row['ProteinContent']:.1f}g")
-                            st.write(f"• Fat: {row['FatContent']:.1f}g")
-                            st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
-                        with col2:
-                            st.write("**🔍 Additional Details**")
-                            st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
-                            st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
-                            st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
-                            st.write(f"• Sugar: {row['SugarContent']:.1f}g")
-                        st.write("**👩‍🍳 Recipe Instructions**")
-                        instructions = format_recipe_instructions(row['RecipeInstructions'])
-                        for i, step in enumerate(instructions, 1):
-                            st.write(f"{i}. {step}")
-            else:
-                st.warning("No recipes found. Please try a different keyword.")
-    
-        # Define a helper function to format recipe instructions
-        def format_recipe_instructions(instructions):
-            """Split the recipe instructions into steps."""
-            return instructions.split('.') if isinstance(instructions, str) else []
-    
-        # Get current page and number of results to display
-        start_index = st.session_state['search_page'] * 5
-    
-        # Display the current page of results
-        st.write(f"### 🍳 Recipes Matching '{search_query}'")
-        display_recommendations(search_results, start_index)
-    
-        # Pagination controls
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            if start_index > 0:
-                if st.button("Previous"):
-                    st.session_state['search_page'] -= 1
-        with col2:
-            if start_index + 5 < len(search_results):
-                if st.button("Next"):
-                    st.session_state['search_page'] += 1
+# Initialize session state for pagination
+if 'search_page' not in st.session_state:
+    st.session_state['search_page'] = 0
+
+# Search Function
+st.subheader("Search for Recipes")
+search_query = st.text_input("Enter a keyword to search for recipes:")
+
+if search_query:
+    # Filter recipes based on the search query
+    search_results = df[df['Name'].str.contains(search_query, case=False, na=False)]
+
+    # Define a helper function to display a subset of recommendations
+    def display_recommendations(recommendations, start_index, num_items=5):
+        """Display a subset of recommendations."""
+        if not recommendations.empty:
+            # Limit to the current page's results
+            page_results = recommendations.iloc[start_index:start_index + num_items]
+            for idx, row in page_results.iterrows():
+                with st.expander(f"📗 {row['Name']}"):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.write("**📊 Nutritional Information**")
+                        st.write(f"• Calories: {row['Calories']:.1f}")
+                        st.write(f"• Protein: {row['ProteinContent']:.1f}g")
+                        st.write(f"• Fat: {row['FatContent']:.1f}g")
+                        st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
+                    with col2:
+                        st.write("**🔍 Additional Details**")
+                        st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
+                        st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
+                        st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
+                        st.write(f"• Sugar: {row['SugarContent']:.1f}g")
+                    st.write("**👩‍🍳 Recipe Instructions**")
+                    instructions = format_recipe_instructions(row['RecipeInstructions'])
+                    for i, step in enumerate(instructions, 1):
+                        st.write(f"{i}. {step}")
+        else:
+            st.warning("No recipes found. Please try a different keyword.")
+
+    # Define a helper function to format recipe instructions
+    def format_recipe_instructions(instructions):
+        """Split the recipe instructions into steps."""
+        return instructions.split('.') if isinstance(instructions, str) else []
+
+    # Get current page and number of results to display
+    start_index = st.session_state['search_page'] * 5
+
+    # Display the current page of results
+    st.write(f"### 🍳 Recipes Matching '{search_query}'")
+    display_recommendations(search_results, start_index)
+
+    # Pagination controls
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        if start_index > 0:
+            if st.button("Previous"):
+                st.session_state['search_page'] -= 1
+    with col2:
+        if start_index + 5 < len(search_results):
+            if st.button("Next"):
+                st.session_state['search_page'] += 1
     
     # Visualization Options
     st.subheader("Visualizations")
