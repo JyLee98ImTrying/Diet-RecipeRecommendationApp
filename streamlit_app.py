@@ -258,7 +258,59 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         st.error(f"Error in recommendation process: {str(e)}")
         st.write("Full error details:", e)
         return pd.DataFrame()
-        
+
+# Sidebar for search and visualization
+st.sidebar.header("🔍 Search & Visualize")
+
+# Search Function
+search_query = st.sidebar.text_input("Search for a recipe:", "")
+if search_query:
+    search_results = df[df['Name'].str.contains(search_query, case=False, na=False)]
+    if not search_results.empty:
+        st.sidebar.write(f"### Results for '{search_query}':")
+        for name in search_results['Name'].head(5):
+            st.sidebar.write(f"- {name}")
+    else:
+        st.sidebar.warning(f"No recipes found for '{search_query}'.")
+
+# Visualization Options
+st.sidebar.header("📊 Visualizations")
+
+# Select visualization type
+visualization_type = st.sidebar.selectbox(
+    "Choose a visualization:",
+    ["Select an option", "Ingredient Distribution", "Nutrient Comparison"]
+)
+
+if visualization_type == "Ingredient Distribution":
+    st.sidebar.write("### Ingredient Distribution")
+    ingredient_column = st.sidebar.selectbox(
+        "Select an ingredient column:",
+        ["SugarContent", "ProteinContent", "FatContent", "FiberContent", "SodiumContent"]
+    )
+    if ingredient_column:
+        st.sidebar.write(f"Distribution of {ingredient_column}:")
+        try:
+            # Plot histogram
+            st.bar_chart(df[ingredient_column].value_counts())
+        except Exception as e:
+            st.sidebar.error(f"Error plotting {ingredient_column}: {str(e)}")
+
+elif visualization_type == "Nutrient Comparison":
+    st.sidebar.write("### Nutrient Comparison")
+    nutrients = ["Calories", "ProteinContent", "FatContent", "CarbohydrateContent", "SugarContent"]
+    nutrient1 = st.sidebar.selectbox("Select first nutrient:", nutrients)
+    nutrient2 = st.sidebar.selectbox("Select second nutrient:", nutrients)
+
+    if nutrient1 and nutrient2:
+        st.sidebar.write(f"Comparison of {nutrient1} vs {nutrient2}:")
+        try:
+            st.line_chart(df[[nutrient1, nutrient2]])
+        except Exception as e:
+            st.sidebar.error(f"Error comparing {nutrient1} and {nutrient2}: {str(e)}")
+
+
+
 # Streamlit UI
 st.title('🍅🧀MyHealthMyFood🥑🥬')
 
