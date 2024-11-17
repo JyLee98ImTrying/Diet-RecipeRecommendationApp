@@ -400,7 +400,6 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
         else:
             st.warning("Please get initial recommendations first.")
-    
 
 # Search and Visualization Page
 elif page == "🔎Search & Visualize📊":
