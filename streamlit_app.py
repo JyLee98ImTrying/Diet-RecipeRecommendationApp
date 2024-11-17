@@ -439,8 +439,8 @@ elif page == "🔎Search & Visualize📊":
         search_results = df[df['Name'].str.contains(search_query, case=False, na=False)]
     
         # Define a helper function to display a subset of recommendations
-       def display_search_recommendations(recommendations, start_index, num_items=5):
-               """Display a subset of recommendations with ingredients."""
+        def display_search_recommendations(recommendations, start_index, num_items=5):
+            """Display a subset of recommendations with ingredients."""
             if not recommendations.empty:
                 # Limit to the current page's results
                 page_results = recommendations.iloc[start_index:start_index + num_items]
@@ -478,22 +478,23 @@ elif page == "🔎Search & Visualize📊":
                             st.write(f"{i}. {step}")
             else:
                 st.warning("No recipes found. Please try a different keyword.")
-            
-                # Display the current page of results
-                st.write(f"### 🍳 Recipes Matching '{search_query}'")
-                display_recommendations(search_results, start_index)
-            
-                # Pagination controls
-                col1, col2 = st.columns([1, 1])
-                with col1:
-                    if start_index > 0:
-                        if st.button("Previous"):
-                            st.session_state['search_page'] -= 1
-                with col2:
-                    if start_index + 5 < len(search_results):
-                        if st.button("Next"):
-                            st.session_state['search_page'] += 1
         
+        # Display the current page of results
+        st.write(f"### 🍳 Recipes Matching '{search_query}'")
+        start_index = st.session_state['search_page'] * 5
+        display_search_recommendations(search_results, start_index)
+        
+        # Pagination controls
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if start_index > 0:
+                if st.button("Previous"):
+                    st.session_state['search_page'] -= 1
+        with col2:
+            if start_index + 5 < len(search_results):
+                if st.button("Next"):
+                    st.session_state['search_page'] += 1
+                    
         # Visualization Options
     st.subheader("Visualizations")
     visualization_type = st.selectbox(
