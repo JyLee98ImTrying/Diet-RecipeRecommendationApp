@@ -158,7 +158,6 @@ def recommend_food(input_data, df, models, excluded_indices=None):
             
         # Enhanced weight loss filtering with scoring
         if wellness_goal == "Lose Weight":
-            # Create a weight loss score
             cluster_data['weight_loss_score'] = (
                 -0.4 * cluster_data['Calories'] +
                 0.3 * cluster_data['ProteinContent'] +
@@ -166,7 +165,6 @@ def recommend_food(input_data, df, models, excluded_indices=None):
                 0.2 * cluster_data['FiberContent'] +
                 -0.2 * cluster_data['SugarContent']
             )
-            # Normalize the score
             max_score = cluster_data['weight_loss_score'].max()
             min_score = cluster_data['weight_loss_score'].min()
             if max_score != min_score:
@@ -178,14 +176,12 @@ def recommend_food(input_data, df, models, excluded_indices=None):
             daily_protein_target = user_weight  # 1g per kg
             protein_per_meal = daily_protein_target / 3
             
-            # Create a muscle gain score
             cluster_data['muscle_gain_score'] = (
                 0.4 * (1 / (abs(cluster_data['ProteinContent'] - protein_per_meal) + 1)) +
                 0.3 * cluster_data['ProteinContent'] +
                 0.2 * cluster_data['Calories'] +
                 0.1 * cluster_data['CarbohydrateContent']
             )
-            # Normalize the score
             max_score = cluster_data['muscle_gain_score'].max()
             min_score = cluster_data['muscle_gain_score'].min()
             if max_score != min_score:
@@ -225,9 +221,11 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         if final_recommendations.empty:
             final_recommendations = cluster_data.sort_values(by='Similarity', ascending=False)
         
+        # Include ingredient columns in the result
         result = final_recommendations[['Name', 'Calories', 'ProteinContent', 'FatContent', 
-                                    'CarbohydrateContent', 'SodiumContent', 'CholesterolContent', 
-                                    'SaturatedFatContent', 'SugarContent', 'RecipeInstructions']]
+                                      'CarbohydrateContent', 'SodiumContent', 'CholesterolContent', 
+                                      'SaturatedFatContent', 'SugarContent', 'RecipeInstructions',
+                                      'RecipeIngredientQuantities', 'RecipeIngredientParts']]
         
         # Enhanced statistics display based on health condition and wellness goal
         if not result.empty:
