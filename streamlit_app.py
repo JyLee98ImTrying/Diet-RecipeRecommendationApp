@@ -83,14 +83,13 @@ def combine_ingredients(quantities, parts):
         quantities_list = parse_r_vector(quantities)
         parts_list = parse_r_vector(parts)
         
-        # Combine quantities and parts
+        # Combine quantities and parts, but only when there's a matching part
         ingredients = []
-        for q, p in zip_longest(quantities_list, parts_list, fillvalue=''):
-            if not q or q.upper() == 'NA':
-                if p:
-                    ingredients.append(p)
+        for i in range(len(parts_list)):  # Iterate based on parts length
+            if i < len(quantities_list) and quantities_list[i] and quantities_list[i].upper() != 'NA':
+                ingredients.append(f"{quantities_list[i]} {parts_list[i]}".strip())
             else:
-                ingredients.append(f"{q} {p}".strip())
+                ingredients.append(parts_list[i])
         
         return [ing for ing in ingredients if ing]
         
