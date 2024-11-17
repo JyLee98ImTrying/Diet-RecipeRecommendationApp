@@ -440,7 +440,7 @@ elif page == "🔎Search & Visualize📊":
     
         # Define a helper function to display a subset of recommendations
        def display_search_recommendations(recommendations, start_index, num_items=5):
-            """Display a subset of recommendations with ingredients."""
+               """Display a subset of recommendations with ingredients."""
             if not recommendations.empty:
                 # Limit to the current page's results
                 page_results = recommendations.iloc[start_index:start_index + num_items]
