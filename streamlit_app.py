@@ -259,26 +259,12 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         st.write("Full error details:", e)
         return pd.DataFrame()
 
-# Sidebar for search and visualization
-st.sidebar.header("🔍 Search & Visualize")
-
-# Search Function
-search_query = st.sidebar.text_input("Search for a recipe:", "")
-if search_query:
-    search_results = df[df['Name'].str.contains(search_query, case=False, na=False)]
-    if not search_results.empty:
-        st.sidebar.write(f"### Results for '{search_query}':")
-        for name in search_results['Name'].head(5):
-            st.sidebar.write(f"- {name}")
-    else:
-        st.sidebar.warning(f"No recipes found for '{search_query}'.")
-
 # Sidebar for Page Navigation
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to:", ["🍅🧀MyHealthMyFood🥑🥬", "🔎Search & 📊Visualize"])
 
 # Streamlit UI (Recommendation Page)
-if page == "Recipe Recommendation":
+if page == "🍅🧀MyHealthMyFood🥑🥬":
     st.title('🍅🧀MyHealthMyFood🥑🥬')
 
 # Load data and models first
@@ -471,4 +457,50 @@ if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'all_rec
     else:
         st.warning("Please get initial recommendations first.")
 
+# Search and Visualization Page
+elif page == "Search & Visualize":
+    st.title("🔍 Search Recipes & 📊 Visualize Data")
+    
+    # Search Function
+    st.subheader("Search for Recipes")
+    search_query = st.text_input("Enter a keyword to search for recipes:")
+    
+    if search_query:
+        search_results = df[df['Name'].str.contains(search_query, case=False, na=False)]
+        if not search_results.empty:
+            st.write(f"### Results for '{search_query}':")
+            st.write(search_results[['Name', 'Calories', 'ProteinContent', 'FatContent']])
+        else:
+            st.warning(f"No recipes found for '{search_query}'.")
+    
+    # Visualization Options
+    st.subheader("Visualizations")
+    visualization_type = st.selectbox(
+        "Choose a visualization:",
+        ["Select an option", "Ingredient Distribution", "Nutrient Comparison"]
+    )
+    
+    if visualization_type == "Ingredient Distribution":
+        st.write("### Ingredient Distribution")
+        ingredient_column = st.selectbox(
+            "Select an ingredient column:",
+            ["SugarContent", "ProteinContent", "FatContent", "FiberContent", "SodiumContent"]
+        )
+        if ingredient_column:
+            try:
+                # Plot histogram
+                st.bar_chart(df[ingredient_column].value_counts())
+            except Exception as e:
+                st.error(f"Error plotting {ingredient_column}: {str(e)}")
 
+    elif visualization_type == "Nutrient Comparison":
+        st.write("### Nutrient Comparison")
+        nutrients = ["Calories", "ProteinContent", "FatContent", "CarbohydrateContent", "SugarContent"]
+        nutrient1 = st.selectbox("Select first nutrient:", nutrients)
+        nutrient2 = st.selectbox("Select second nutrient:", nutrients)
+        
+        if nutrient1 and nutrient2:
+            try:
+                st.line_chart(df[[nutrient1, nutrient2]])
+            except Exception as e:
+                st.error(f"Error comparing {nutrient1} and {nutrient2}: {str(e)}")
