@@ -405,7 +405,11 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
 # Search and Visualization Page
 elif page == "🔎Search & Visualize📊":
     st.title("🔎Search & Visualize📊")
-    
+
+    # Search Function
+    st.subheader("Search for Recipes")
+    search_query = st.text_input("Enter a keyword to search for recipes:")+
+
     if search_query:
         # Filter recipes based on the search query
         search_results = df[df['Name'].str.contains(search_query, case=False, na=False)]
