@@ -406,53 +406,53 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
 elif page == "🔎Search & Visualize📊":
     st.title("🔎Search & Visualize📊")
     
-if search_query:
-    # Filter recipes based on the search query
-    search_results = df[df['Name'].str.contains(search_query, case=False, na=False)]
-    
-    # Display the search results using your custom format
-    def display_recommendations(recommendations):
-        """Display recommendations in a vertical format with expandable recipe instructions."""
-        if not recommendations.empty:
-            st.write(f"### 🍳 Recipes Matching '{search_query}'")
-            
-            # Iterate through each matching recipe
-            for idx, row in recommendations.iterrows():
-                with st.expander(f"📗 {row['Name']}"):
-                    # Create two columns for layout
-                    col1, col2 = st.columns(2)
-                    
-                    # Column 1: Nutritional Information
-                    with col1:
-                        st.write("**📊 Nutritional Information**")
-                        st.write(f"• Calories: {row['Calories']:.1f}")
-                        st.write(f"• Protein: {row['ProteinContent']:.1f}g")
-                        st.write(f"• Fat: {row['FatContent']:.1f}g")
-                        st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
-                    
-                    # Column 2: Additional Nutritional Details
-                    with col2:
-                        st.write("**🔍 Additional Details**")
-                        st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
-                        st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
-                        st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
-                        st.write(f"• Sugar: {row['SugarContent']:.1f}g")
-                    
-                    # Recipe Instructions
-                    st.write("**👩‍🍳 Recipe Instructions**")
-                    instructions = format_recipe_instructions(row['RecipeInstructions'])
-                    for i, step in enumerate(instructions, 1):
-                        st.write(f"{i}. {step}")
-        else:
-            st.warning("No recipes found. Please try a different keyword.")
-    
-    # Define a helper function to format recipe instructions
-    def format_recipe_instructions(instructions):
-        """Split the recipe instructions into steps."""
-        return instructions.split('.') if isinstance(instructions, str) else []
-    
-    # Call the function to display search results
-    display_recommendations(search_results)
+    if search_query:
+        # Filter recipes based on the search query
+        search_results = df[df['Name'].str.contains(search_query, case=False, na=False)]
+        
+        # Display the search results using your custom format
+        def display_recommendations(recommendations):
+            """Display recommendations in a vertical format with expandable recipe instructions."""
+            if not recommendations.empty:
+                st.write(f"### 🍳 Recipes Matching '{search_query}'")
+                
+                # Iterate through each matching recipe
+                for idx, row in recommendations.iterrows():
+                    with st.expander(f"📗 {row['Name']}"):
+                        # Create two columns for layout
+                        col1, col2 = st.columns(2)
+                        
+                        # Column 1: Nutritional Information
+                        with col1:
+                            st.write("**📊 Nutritional Information**")
+                            st.write(f"• Calories: {row['Calories']:.1f}")
+                            st.write(f"• Protein: {row['ProteinContent']:.1f}g")
+                            st.write(f"• Fat: {row['FatContent']:.1f}g")
+                            st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
+                        
+                        # Column 2: Additional Nutritional Details
+                        with col2:
+                            st.write("**🔍 Additional Details**")
+                            st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
+                            st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
+                            st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
+                            st.write(f"• Sugar: {row['SugarContent']:.1f}g")
+                        
+                        # Recipe Instructions
+                        st.write("**👩‍🍳 Recipe Instructions**")
+                        instructions = format_recipe_instructions(row['RecipeInstructions'])
+                        for i, step in enumerate(instructions, 1):
+                            st.write(f"{i}. {step}")
+            else:
+                st.warning("No recipes found. Please try a different keyword.")
+        
+        # Define a helper function to format recipe instructions
+        def format_recipe_instructions(instructions):
+            """Split the recipe instructions into steps."""
+            return instructions.split('.') if isinstance(instructions, str) else []
+        
+        # Call the function to display search results
+        display_recommendations(search_results)
     
     # Visualization Options
     st.subheader("Visualizations")
