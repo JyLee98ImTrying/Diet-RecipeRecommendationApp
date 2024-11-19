@@ -258,11 +258,39 @@ def recommend_food(input_data, df, models, excluded_indices=None):
 
 # Sidebar for Page Navigation
 with st.sidebar.expander("Navigation", expanded=True):
-    page = st.radio("Go to:", ["🍅🧀MyHealthMyFood🥑🥬", "🔎Search & Visualize📊"])
+    page = st.radio("Go to:", ["ReadMe 📖", "🍅🧀MyHealthMyFood🥑🥬", "🔎Search & Visualize📊"])
 
 # Load data and models first
 df = load_data()
 models = load_models()
+
+def render_readme_page():
+    st.title('ReadMe 📖')
+    
+    st.markdown("""
+    ## How to Use ❓
+    
+    The app offers two powerful features:
+    
+    ### 1 - The Star of the Show ⭐
+    Recipes are recommended through advanced machine learning techniques:
+    - **KMeans Clustering**: Clusters recipes to identify similar groups
+    - **Random Forest Classification**: Classifies and predicts food items
+    - **Content-Based Recommendation**: Suggests recipes based on item similarity
+    
+    ### 2 - Recipe Search 🔎
+    - Search recipes using keywords like "Fish", "Chicken", "Egg", and more
+    - View detailed nutritional information
+    - Access calorie details for each recipe
+    """)
+    
+    # Optional: Add a visual separator or additional guidance
+    st.markdown("---")
+    st.info("Explore recipes, discover nutrition, and enjoy your culinary journey!")
+
+# If this is part of a multi-page Streamlit app
+if page == "ReadMe 📖":
+    render_readme_page()
 
 # Streamlit UI (Recommendation Page)
 if page == "🍅🧀MyHealthMyFood🥑🥬":
