@@ -446,10 +446,10 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                         fig2 = create_calories_summary_plot(st.session_state.selected_recipes)
                         st.pyplot(fig2)
                 
-            return recommendations
-         else:
-            st.warning("No recommendations found. Please try different inputs.")
-            return pd.DataFrame()
+                return recommendations
+             else:
+                st.warning("No recommendations found. Please try different inputs.")
+                return pd.DataFrame()
     
     # In your main code, replace the recommendation display section with this:
     if st.button("Get Recommendations"):
