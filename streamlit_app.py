@@ -327,10 +327,10 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
     st.title('🍅🧀MyHealthMyFood🥑🥬')
 
     # Initialize session state for storing previous recommendations
-    if 'previous_recommendations' not in st.session_state:
-        st.session_state.previous_recommendations = set()
-    if 'all_recommendations_cache' not in st.session_state:
-        st.session_state.all_recommendations_cache = None
+    if 'current_recommendations' not in st.session_state:
+        st.session_state.current_recommendations = pd.DataFrame()
+    if 'selected_recipes' not in st.session_state:
+        st.session_state.selected_recipes = pd.DataFrame()
     
     if df is not None and models is not None:
         # User inputs
@@ -376,57 +376,80 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             
             # Store current recommendations in session state
             st.session_state.current_recommendations = recommendations
+            recommendation_container = st.container()
+            
+            with recommendation_container:
+                selected_indices = []
             
             for idx, row in recommendations.iterrows():
-                # Use a unique key for each checkbox
-                checkbox_key = f'{key_prefix}_select_{idx}'
+                    # Use a unique key for each checkbox
+                    checkbox_key = f'{key_prefix}_select_{idx}'
+                    
+                    # Create an expander for each recipe
+                    with st.expander(f"📗 {row['Name']}"):
+                        # Checkbox inside the expander
+                        if st.checkbox(f"Select this recipe", key=checkbox_key):
+                            selected_indices.append(idx)
+                        
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            st.write("**📊 Nutritional Information**")
+                            st.write(f"• Calories: {row['Calories']:.1f}")
+                            st.write(f"• Protein: {row['ProteinContent']:.1f}g")
+                            st.write(f"• Fat: {row['FatContent']:.1f}g")
+                            st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
+                        
+                        with col2:
+                            st.write("**🔍 Additional Details**")
+                            st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
+                            st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
+                            st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
+                            st.write(f"• Sugar: {row['SugarContent']:.1f}g")
+                        
+                        # Ingredients section
+                        st.write("**🥗 Ingredients**")
+                        ingredients = combine_ingredients(
+                            row.get('RecipeIngredientQuantities', ''), 
+                            row.get('RecipeIngredientParts', '')
+                        )
+                        if ingredients:
+                            for ingredient in ingredients:
+                                st.write(f"• {ingredient}")
+                        else:
+                            st.write("No ingredient information available")
+                        
+                        # Recipe Instructions
+                        st.write("**👩‍🍳 Recipe Instructions**")
+                        instructions = format_recipe_instructions(row['RecipeInstructions'])
+                        for i, step in enumerate(instructions, 1):
+                            st.write(f"{i}. {step}")
                 
-                # Checkbox for selection
-                if st.checkbox(f"Select 📗 {row['Name']}", key=checkbox_key):
-                    # Add to selected recipes if not already present
-                    if idx not in st.session_state.selected_recipes.index:
-                        st.session_state.selected_recipes = pd.concat([
-                            st.session_state.selected_recipes, 
-                            recommendations.loc[[idx]]
-                        ])
+                # Add selected recipes to session state
+                if selected_indices:
+                    selected_recipes = recommendations.loc[selected_indices]
+                    st.session_state.selected_recipes = pd.concat([
+                        st.session_state.selected_recipes, 
+                        selected_recipes
+                    ]).drop_duplicates(subset=['Name'])
                 
-                # Existing recipe details expansion
-                with st.expander(f"📗 {row['Name']} (Details)"):
-                    col1, col2 = st.columns(2)
+                # Display selected recipes
+                if not st.session_state.selected_recipes.empty:
+                    st.write("### 🍽️ Selected Recipes")
+                    for _, row in st.session_state.selected_recipes.iterrows():
+                        st.write(f"• {row['Name']}")
                     
-                    with col1:
-                        st.write("**📊 Nutritional Information**")
-                        st.write(f"• Calories: {row['Calories']:.1f}")
-                        st.write(f"• Protein: {row['ProteinContent']:.1f}g")
-                        st.write(f"• Fat: {row['FatContent']:.1f}g")
-                        st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
-                    
-                    with col2:
-                        st.write("**🔍 Additional Details**")
-                        st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
-                        st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
-                        st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
-                        st.write(f"• Sugar: {row['SugarContent']:.1f}g")
-                    
-                    # Ingredients and Instructions sections remain the same
-            
-            # Display selected recipes
-            if not st.session_state.selected_recipes.empty:
-                st.write("### 🍽️ Selected Recipes")
-                for idx, row in st.session_state.selected_recipes.iterrows():
-                    st.write(f"• {row['Name']}")
-                
-                # Visualize Selected Recipes button
-                if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
-                    # Nutritional Distribution Plot
-                    st.write("### 🍽️ Nutritional Content Distribution")
-                    fig1 = create_nutrient_distribution_plot(st.session_state.selected_recipes)
-                    st.pyplot(fig1)
-                    
-                    # Calories Summary Plot
-                    st.write("### 🔢 Calories Breakdown")
-                    fig2 = create_calories_summary_plot(st.session_state.selected_recipes)
-                    st.pyplot(fig2)
+                    # Visualize Selected Recipes button
+                    if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
+                        # Nutritional Distribution Plot
+                        st.write("### 🍽️ Nutritional Content Distribution")
+                        fig1 = create_nutrient_distribution_plot(st.session_state.selected_recipes)
+                        st.pyplot(fig1)
+                        
+                        # Calories Summary Plot
+                        st.write("### 🔢 Calories Breakdown")
+                        fig2 = create_calories_summary_plot(st.session_state.selected_recipes)
+                        st.pyplot(fig2)
             
             return recommendations
         else:
