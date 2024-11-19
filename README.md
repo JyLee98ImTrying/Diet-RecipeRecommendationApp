@@ -8,4 +8,7 @@ MyHealthMyFood provides all that on top of helping people with Non-Communicable 
 The app has 2 features, 
 
 ## 1 - The star of the show ⭐
-Recipes (including nutritional information and calories) are recommended using machine learning algorithms (KMeans clusters the recipe; Random Forest predicts the 
+Recipes (including nutritional information and calories) are recommended using machine learning algorithms (KMeans clusters the recipe; Random Forest classifies the food items and predict the food based on the input), lastly the content-based recommendation system predicts the food based on the similarity of the items. 
+
+## 2 - Recipe Search 🔎
+Users can search the items based on keywords, such as "Fish", "Chicken", "Egg" and more and view the nutritional information and calories of the recipes. 
