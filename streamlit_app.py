@@ -420,13 +420,13 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                         for i, step in enumerate(instructions, 1):
                             st.write(f"{i}. {step}")
                 
-                # Add selected recipes to session state
-                    if selected_indices:
-                        selected_recipes = recommendations.loc[selected_indices]
-                        st.session_state.selected_recipes = pd.concat([
-                            st.session_state.selected_recipes, 
-                            selected_recipes
-                        ]).drop_duplicates(subset=['Name'])
+        # Add selected recipes to session state
+        if selected_indices:
+            selected_recipes = recommendations.loc[selected_indices]
+            st.session_state.selected_recipes = pd.concat([
+                st.session_state.selected_recipes, 
+                selected_recipes
+            ]).drop_duplicates(subset=['Name'])
                     
                 # Display selected recipes
                 if not st.session_state.selected_recipes.empty:
