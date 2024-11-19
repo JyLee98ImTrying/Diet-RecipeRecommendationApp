@@ -420,36 +420,36 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                         for i, step in enumerate(instructions, 1):
                             st.write(f"{i}. {step}")
                 
-        # Add selected recipes to session state
-        if selected_indices:
-            selected_recipes = recommendations.loc[selected_indices]
-            st.session_state.selected_recipes = pd.concat([
-                st.session_state.selected_recipes, 
-                selected_recipes
-            ]).drop_duplicates(subset=['Name'])
-                    
-                # Display selected recipes
-            if not st.session_state.selected_recipes.empty:
-                st.write("### 🍽️ Selected Recipes")
-                for _, row in st.session_state.selected_recipes.iterrows():
-                    st.write(f"• {row['Name']}")
-                    
-                    # Visualize Selected Recipes button
-                if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
-                        # Nutritional Distribution Plot
-                    st.write("### 🍽️ Nutritional Content Distribution")
-                    fig1 = create_nutrient_distribution_plot(st.session_state.selected_recipes)
-                    st.pyplot(fig1)
+            # Add selected recipes to session state
+            if selected_indices:
+                selected_recipes = recommendations.loc[selected_indices]
+                st.session_state.selected_recipes = pd.concat([
+                    st.session_state.selected_recipes, 
+                    selected_recipes
+                ]).drop_duplicates(subset=['Name'])
                         
-                        # Calories Summary Plot
-                    st.write("### 🔢 Calories Breakdown")
-                    fig2 = create_calories_summary_plot(st.session_state.selected_recipes)
-                    st.pyplot(fig2)
-            
-        return recommendations
-     else:
-        st.warning("No recommendations found. Please try different inputs.")
-        return pd.DataFrame()
+                    # Display selected recipes
+                if not st.session_state.selected_recipes.empty:
+                    st.write("### 🍽️ Selected Recipes")
+                    for _, row in st.session_state.selected_recipes.iterrows():
+                        st.write(f"• {row['Name']}")
+                        
+                        # Visualize Selected Recipes button
+                    if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
+                            # Nutritional Distribution Plot
+                        st.write("### 🍽️ Nutritional Content Distribution")
+                        fig1 = create_nutrient_distribution_plot(st.session_state.selected_recipes)
+                        st.pyplot(fig1)
+                            
+                            # Calories Summary Plot
+                        st.write("### 🔢 Calories Breakdown")
+                        fig2 = create_calories_summary_plot(st.session_state.selected_recipes)
+                        st.pyplot(fig2)
+                
+            return recommendations
+         else:
+            st.warning("No recommendations found. Please try different inputs.")
+            return pd.DataFrame()
     
     # In your main code, replace the recommendation display section with this:
     if st.button("Get Recommendations"):
