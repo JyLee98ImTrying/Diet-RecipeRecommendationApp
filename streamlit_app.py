@@ -368,12 +368,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         pd.DataFrame: Selected recipes
         """
         if not recommendations.empty:
-            st.write("### 🍳 Recommended Food Items (Single Serving)")
-            
-            # Initialize session state for selected recipes if not exists
-            if 'selected_recipes' not in st.session_state:
-                st.session_state.selected_recipes = pd.DataFrame()
-            
+            st.write("### 🍳 Recommended Food Items (Single Serving)")  
             # Store current recommendations in session state
             st.session_state.current_recommendations = recommendations
             recommendation_container = st.container()
@@ -426,12 +421,12 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                             st.write(f"{i}. {step}")
                 
                 # Add selected recipes to session state
-            if selected_indices:
-                selected_recipes = recommendations.loc[selected_indices]
-                st.session_state.selected_recipes = pd.concat([
-                    st.session_state.selected_recipes, 
-                    selected_recipes
-                ]).drop_duplicates(subset=['Name'])
+                if selected_indices:
+                    selected_recipes = recommendations.loc[selected_indices]
+                    st.session_state.selected_recipes = pd.concat([
+                        st.session_state.selected_recipes, 
+                        selected_recipes
+                    ]).drop_duplicates(subset=['Name'])
                 
                 # Display selected recipes
                 if not st.session_state.selected_recipes.empty:
