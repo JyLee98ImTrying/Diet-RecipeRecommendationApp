@@ -258,9 +258,56 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         st.write("Full error details:", e)
         return pd.DataFrame()
 
+def create_nutrient_distribution_plot(selected_recipes):
+    """
+    Create a distribution plot for nutritional content of selected recipes
+    
+    Parameters:
+    selected_recipes (pd.DataFrame): DataFrame of selected recipes
+    
+    Returns:
+    matplotlib figure
+    """
+    # Nutrients to visualize
+    nutrients = ['ProteinContent', 'FatContent', 'CarbohydrateContent', 
+                 'SodiumContent', 'CholesterolContent', 
+                 'SaturatedFatContent', 'SugarContent']
+    
+    # Create a figure with subplots
+    fig, axes = plt.subplots(len(nutrients), 1, figsize=(10, 4*len(nutrients)))
+    fig.suptitle('Nutritional Content Distribution of Selected Recipes', fontsize=16)
+    
+    # Plot distribution for each nutrient
+    for i, nutrient in enumerate(nutrients):
+        sns.boxplot(x=selected_recipes[nutrient], ax=axes[i])
+        axes[i].set_title(f'{nutrient} Distribution')
+        axes[i].set_xlabel('Content (g/serving)')
+    
+    plt.tight_layout()
+    return fig
+
+def create_calories_summary_plot(selected_recipes):
+    """
+    Create a bar plot summarizing calories of selected recipes
+    
+    Parameters:
+    selected_recipes (pd.DataFrame): DataFrame of selected recipes
+    
+    Returns:
+    matplotlib figure
+    """
+    plt.figure(figsize=(10, 6))
+    plt.bar(selected_recipes['Name'], selected_recipes['Calories'])
+    plt.title('Calories in Selected Recipes', fontsize=16)
+    plt.xlabel('Recipe Name')
+    plt.ylabel('Calories (kcal)')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    return plt.gcf()
+
 # Sidebar for Page Navigation
 with st.sidebar.expander("Navigation", expanded=True):
-    page = st.radio("Go to:", ["ReadMe 📖", "🍅🧀MyHealthMyFood🥑🥬", "🔎Search & Visualize📊"])
+    page = st.radio("Go to:", ["ReadMe 📖", "🍅🧀MyHealthMyFood🥑🥬", "🔎Search"])
 
 # Load data and models first
 df = load_data()
@@ -328,52 +375,87 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         steps = [step.strip().strip('"') for step in instructions.split('",')]
         return steps
     
-    def display_recommendations(recommendations):
-        """Display recommendations in a vertical format with expandable recipe instructions."""
-        if not recommendations.empty:
-            st.write("### 🍳 Recommended Food Items (Single Serving)")
+    def display_recommendations_with_selection(recommendations):
+    """
+    Display recommendations with checkboxes for selection
+    
+    Parameters:
+    recommendations (pd.DataFrame): DataFrame of recipe recommendations
+    
+    Returns:
+    pd.DataFrame: Selected recipes
+    """
+    if not recommendations.empty:
+        st.write("### 🍳 Recommended Food Items (Single Serving)")
+        
+        # Create a list to store selected recipes
+        selected_recipe_indices = []
+        
+        # Display each recipe with a checkbox
+        for idx, row in recommendations.iterrows():
+            # Use checkbox for selection
+            if st.checkbox(f"Select 📗 {row['Name']}"):
+                selected_recipe_indices.append(idx)
             
-            # Display each recipe in a vertical format
-            for idx, row in recommendations.iterrows():
-                with st.expander(f"📗 {row['Name']}"):
-                    # Create three columns for better layout
-                    col1, col2 = st.columns(2)
-                    
-                    # Nutritional Information in first column
-                    with col1:
-                        st.write("**📊 Nutritional Information**")
-                        st.write(f"• Calories: {row['Calories']:.1f}")
-                        st.write(f"• Protein: {row['ProteinContent']:.1f}g")
-                        st.write(f"• Fat: {row['FatContent']:.1f}g")
-                        st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
-                    
-                    # Additional nutritional details in second column
-                    with col2:
-                        st.write("**🔍 Additional Details**")
-                        st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
-                        st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
-                        st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
-                        st.write(f"• Sugar: {row['SugarContent']:.1f}g")
-                    
-                    # Ingredients section
-                    st.write("**🥗 Ingredients**")
-                    ingredients = combine_ingredients(
-                        row.get('RecipeIngredientQuantities', ''), 
-                        row.get('RecipeIngredientParts', '')
-                    )
-                    if ingredients:
-                        for ingredient in ingredients:
-                            st.write(f"• {ingredient}")
-                    else:
-                        st.write("No ingredient information available")
-                    
-                    # Recipe Instructions
-                    st.write("**👩‍🍳 Recipe Instructions**")
-                    instructions = format_recipe_instructions(row['RecipeInstructions'])
-                    for i, step in enumerate(instructions, 1):
-                        st.write(f"{i}. {step}")
-        else:
-            st.warning("No recommendations found. Please try different inputs.")
+            # Existing recipe details expansion
+            with st.expander(f"📗 {row['Name']} (Details)"):
+                col1, col2 = st.columns(2)
+                
+                # Nutritional Information
+                with col1:
+                    st.write("**📊 Nutritional Information**")
+                    st.write(f"• Calories: {row['Calories']:.1f}")
+                    st.write(f"• Protein: {row['ProteinContent']:.1f}g")
+                    st.write(f"• Fat: {row['FatContent']:.1f}g")
+                    st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
+                
+                # Additional nutritional details
+                with col2:
+                    st.write("**🔍 Additional Details**")
+                    st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
+                    st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
+                    st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
+                    st.write(f"• Sugar: {row['SugarContent']:.1f}g")
+                
+                # Ingredients section
+                st.write("**🥗 Ingredients**")
+                ingredients = combine_ingredients(
+                    row.get('RecipeIngredientQuantities', ''), 
+                    row.get('RecipeIngredientParts', '')
+                )
+                if ingredients:
+                    for ingredient in ingredients:
+                        st.write(f"• {ingredient}")
+                else:
+                    st.write("No ingredient information available")
+                
+                # Recipe Instructions
+                st.write("**👩‍🍳 Recipe Instructions**")
+                instructions = format_recipe_instructions(row['RecipeInstructions'])
+                for i, step in enumerate(instructions, 1):
+                    st.write(f"{i}. {step}")
+        
+        # Select Recipes button
+        if st.button("Visualize Selected Recipes"):
+            if selected_recipe_indices:
+                selected_recipes = recommendations.loc[selected_recipe_indices]
+                
+                # Display Nutritional Distribution Plot
+                st.write("### 🍽️ Nutritional Content Distribution")
+                fig1 = create_nutrient_distribution_plot(selected_recipes)
+                st.pyplot(fig1)
+                
+                # Display Calories Summary Plot
+                st.write("### 🔢 Calories Breakdown")
+                fig2 = create_calories_summary_plot(selected_recipes)
+                st.pyplot(fig2)
+            else:
+                st.warning("Please select at least one recipe to visualize.")
+        
+        return recommendations
+    else:
+        st.warning("No recommendations found. Please try different inputs.")
+        return pd.DataFrame()
 
     
     # In your main code, replace the recommendation display section with this:
@@ -414,10 +496,10 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         # Store all recommendations in cache for reshuffling
         if not recommendations.empty:
             st.session_state.all_recommendations_cache = recommendations
-            # Store the indices of shown recommendations
             st.session_state.previous_recommendations.update(recommendations.index[:5].tolist())
-            # Display only top 5 recommendations
-            display_recommendations(recommendations.head(5))
+            
+            # Use the new display function
+            display_recommendations_with_selection(recommendations.head(5))
         else:
             st.warning("No recommendations found. Please try different inputs.")
     
@@ -442,8 +524,8 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             st.warning("Please get initial recommendations first.")
 
 # Search and Visualization Page
-elif page == "🔎Search & Visualize📊":
-    st.title("🔎Search & Visualize📊")
+elif page == "🔎Search":
+    st.title("🔎Search")
 
     # Initialize session state for pagination
     if 'search_page' not in st.session_state:
@@ -524,35 +606,3 @@ elif page == "🔎Search & Visualize📊":
             if start_index + 5 < len(search_results):
                 if st.button("Next"):
                     st.session_state['search_page'] += 1
-                    
-        # Visualization Options
-    st.subheader("Visualizations")
-    visualization_type = st.selectbox(
-        "Choose a visualization:",
-        ["Select an option", "Ingredient Distribution", "Nutrient Comparison"]
-    )
-        
-    if visualization_type == "Ingredient Distribution":
-        st.write("### Ingredient Distribution")
-        ingredient_column = st.selectbox(
-            "Select an ingredient column:",
-            ["SugarContent", "ProteinContent", "FatContent", "FiberContent", "SodiumContent"]
-        )
-        if ingredient_column:
-            try:
-                # Plot histogram
-                st.bar_chart(df[ingredient_column].value_counts())
-            except Exception as e:
-                st.error(f"Error plotting {ingredient_column}: {str(e)}")
-    
-    elif visualization_type == "Nutrient Comparison":
-        st.write("### Nutrient Comparison")
-        nutrients = ["Calories", "ProteinContent", "FatContent", "CarbohydrateContent", "SugarContent"]
-        nutrient1 = st.selectbox("Select first nutrient:", nutrients)
-        nutrient2 = st.selectbox("Select second nutrient:", nutrients)
-            
-        if nutrient1 and nutrient2:
-            try:
-                st.line_chart(df[[nutrient1, nutrient2]])
-            except Exception as e:
-                st.error(f"Error comparing {nutrient1} and {nutrient2}: {str(e)}")
