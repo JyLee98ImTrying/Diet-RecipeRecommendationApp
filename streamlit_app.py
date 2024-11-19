@@ -265,7 +265,7 @@ df = load_data()
 models = load_models()
 
 def render_readme_page():
-    st.title('📔 ReadMe 📖')
+    st.title('ReadMe 📖')
     
     st.markdown("""
     ## How to Use ❓
@@ -289,7 +289,7 @@ def render_readme_page():
     st.info("Explore recipes, discover nutrition, and enjoy your culinary journey!")
 
 # If this is part of a multi-page Streamlit app
-if page == "📔 ReadMe 📖":
+if page == "ReadMe 📖":
     render_readme_page()
 
 # Streamlit UI (Recommendation Page)
