@@ -375,26 +375,26 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             selection_container = st.container()
 
             with selection_container:
-            for idx, row in recommendations.iterrows():
-                # Use a more unique and consistent key generation
-                unique_key = f'recipe_select_{key_prefix}_{idx}'
-                
-                with st.expander(f"📗 {row['Name']}"):
-                    # Create a checkbox with a unique key
-                    is_selected = st.checkbox(
-                        "Select this recipe", 
-                        key=unique_key,
-                        value=idx in st.session_state.selected_recipe_indices
-                    )
+                for idx, row in recommendations.iterrows():
+                    # Use a more unique and consistent key generation
+                    unique_key = f'recipe_select_{key_prefix}_{idx}'
                     
-                    # Track selection state
-                    if is_selected:
-                        st.session_state.selected_recipe_indices.add(idx)
-                    else:
-                        st.session_state.selected_recipe_indices.discard(idx)
-                    
-                    # Rest of the recipe display logic remains the same as before
-                    col1, col2 = st.columns(2)
+                    with st.expander(f"📗 {row['Name']}"):
+                        # Create a checkbox with a unique key
+                        is_selected = st.checkbox(
+                            "Select this recipe", 
+                            key=unique_key,
+                            value=idx in st.session_state.selected_recipe_indices
+                        )
+                        
+                        # Track selection state
+                        if is_selected:
+                            st.session_state.selected_recipe_indices.add(idx)
+                        else:
+                            st.session_state.selected_recipe_indices.discard(idx)
+                        
+                        # Rest of the recipe display logic remains the same as before
+                        col1, col2 = st.columns(2)
             
             with recommendation_container:
                 selected_indices = []
