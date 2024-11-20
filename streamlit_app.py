@@ -449,7 +449,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 
             # Add selected recipes to session state
             if st.session_state.selected_recipe_indices:
-            selected_recipes = recommendations.loc[list(st.session_state.selected_recipe_indices)]
+                selected_recipes = recommendations.loc[list(st.session_state.selected_recipe_indices)]
             
             # Display selected recipes
             st.write("### 🍽️ Selected Recipes")
