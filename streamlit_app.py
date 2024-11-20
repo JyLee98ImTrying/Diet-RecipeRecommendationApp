@@ -382,8 +382,12 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                     
                     # Create an expander for each recipe
                     with st.expander(f"📗 {row['Name']}"):
-                        # Checkbox inside the expander
-                        if st.checkbox(f"Select this recipe", key=checkbox_key):
+                        # Checkbox inside the expander with rerun prevention
+                        col_select, col_info = st.columns([1, 3])
+                        with col_select:
+                            is_selected = st.checkbox(f"Select", key=checkbox_key)
+                        
+                        if is_selected:
                             selected_indices.append(idx)
                         
                         col1, col2 = st.columns(2)
@@ -436,7 +440,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                         
                         # Visualize Selected Recipes button
                     if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
-                            # Nutritional Distribution Plot
+                        # Nutritional Distribution Plot
                         st.write("### 🍽️ Nutritional Content Distribution")
                         fig1 = create_nutrient_distribution_plot(st.session_state.selected_recipes)
                         st.pyplot(fig1)
@@ -446,10 +450,10 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                         fig2 = create_calories_summary_plot(st.session_state.selected_recipes)
                         st.pyplot(fig2)
                 
-            return recommendations
-        else:
-            st.warning("No recommendations found. Please try different inputs.")
-            return pd.DataFrame()
+                return recommendations
+            else:
+                st.warning("No recommendations found. Please try different inputs.")
+                return pd.DataFrame()
     
     # In your main code, replace the recommendation display section with this:
     if st.button("Get Recommendations"):
