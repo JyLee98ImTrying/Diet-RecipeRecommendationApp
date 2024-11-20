@@ -457,16 +457,16 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 st.write(f"• {row['Name']}")
                         
                         # Visualize Selected Recipes button
-                    if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
-                        # Nutritional Distribution Plot
-                        st.write("### 🍽️ Nutritional Content Distribution")
-                        fig1 = create_nutrient_distribution_plot(st.session_state.selected_recipes)
-                        st.pyplot(fig1)
+                if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
+                    # Nutritional Distribution Plot
+                    st.write("### 🍽️ Nutritional Content Distribution")
+                    fig1 = create_nutrient_distribution_plot(st.session_state.selected_recipes)
+                    st.pyplot(fig1)
                             
                             # Calories Summary Plot
-                        st.write("### 🔢 Calories Breakdown")
-                        fig2 = create_calories_summary_plot(st.session_state.selected_recipes)
-                        st.pyplot(fig2)
+                    st.write("### 🔢 Calories Breakdown")
+                    fig2 = create_calories_summary_plot(st.session_state.selected_recipes)
+                    st.pyplot(fig2)
                 
             return recommendations
         else:
