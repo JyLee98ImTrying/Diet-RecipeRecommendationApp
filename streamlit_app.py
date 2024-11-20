@@ -372,6 +372,29 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             # Store current recommendations in session state
             st.session_state.current_recommendations = recommendations
             recommendation_container = st.container()
+            selection_container = st.container()
+
+            with selection_container:
+            for idx, row in recommendations.iterrows():
+                # Use a more unique and consistent key generation
+                unique_key = f'recipe_select_{key_prefix}_{idx}'
+                
+                with st.expander(f"📗 {row['Name']}"):
+                    # Create a checkbox with a unique key
+                    is_selected = st.checkbox(
+                        "Select this recipe", 
+                        key=unique_key,
+                        value=idx in st.session_state.selected_recipe_indices
+                    )
+                    
+                    # Track selection state
+                    if is_selected:
+                        st.session_state.selected_recipe_indices.add(idx)
+                    else:
+                        st.session_state.selected_recipe_indices.discard(idx)
+                    
+                    # Rest of the recipe display logic remains the same as before
+                    col1, col2 = st.columns(2)
             
             with recommendation_container:
                 selected_indices = []
@@ -425,18 +448,13 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                             st.write(f"{i}. {step}")
                 
             # Add selected recipes to session state
-            if selected_indices:
-                selected_recipes = recommendations.loc[selected_indices]
-                st.session_state.selected_recipes = pd.concat([
-                    st.session_state.selected_recipes, 
-                    selected_recipes
-                ]).drop_duplicates(subset=['Name'])
-                        
-                    # Display selected recipes
-                if not st.session_state.selected_recipes.empty:
-                    st.write("### 🍽️ Selected Recipes")
-                    for _, row in st.session_state.selected_recipes.iterrows():
-                        st.write(f"• {row['Name']}")
+            if st.session_state.selected_recipe_indices:
+            selected_recipes = recommendations.loc[list(st.session_state.selected_recipe_indices)]
+            
+            # Display selected recipes
+            st.write("### 🍽️ Selected Recipes")
+            for _, row in selected_recipes.iterrows():
+                st.write(f"• {row['Name']}")
                         
                         # Visualize Selected Recipes button
                     if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
