@@ -387,7 +387,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         pd.DataFrame: Selected recipes
         """
         if 'current_recommendations' not in st.session_state:
-        st.session_state.current_recommendations = None
+            st.session_state.current_recommendations = None
     
         # Store or retrieve recommendations
         if recommendations is not None and not recommendations.empty:
