@@ -309,6 +309,8 @@ def create_calories_summary_plot(selected_recipes):
 with st.sidebar.expander("Navigation", expanded=True):
     page = st.radio("Go to:", ["ReadMe 📖", "🍅🧀MyHealthMyFood🥑🥬", "🔎Search & Visualize📊"])
 
+st.set_page_config(page_title="🍅🧀MyHealthMyFood🥑🥬", page_icon=":tada:", layout="wide")
+
 # Load data and models first
 df = load_data()
 models = load_models()
