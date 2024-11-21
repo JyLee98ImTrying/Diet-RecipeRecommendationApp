@@ -519,7 +519,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             # Store the indices of shown recommendations
             st.session_state.previous_recommendations.update(recommendations.index[:5].tolist())
             # Display only top 5 recommendations
-            display_recommendations(recommendations.head(5))
+            display_recommendations_with_selection(recommendations.head(5))
         else:
             st.warning("No recommendations found. Please try different inputs.")
     
