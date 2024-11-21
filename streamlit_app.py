@@ -341,16 +341,19 @@ def render_readme_page():
 if page == "ReadMe 📖":
     render_readme_page()
 
+if 'recommendations' not in st.session_state:
+    st.session_state.recommendations = None
+if 'selected_recipes' not in st.session_state:
+    st.session_state.selected_recipes = set()
+if 'previous_recommendations' not in st.session_state:
+    st.session_state.previous_recommendations = set()
+if 'all_recommendations_cache' not in st.session_state:
+    st.session_state.all_recommendations_cache = None
+
 # Streamlit UI (Recommendation Page)
 if page == "🍅🧀MyHealthMyFood🥑🥬":
     st.title('🍅🧀MyHealthMyFood🥑🥬')
 
-    # Initialize session state for storing previous recommendations
-    if 'previous_recommendations' not in st.session_state:
-        st.session_state.previous_recommendations = set()
-    if 'all_recommendations_cache' not in st.session_state:
-        st.session_state.all_recommendations_cache = None
-    
     if df is not None and models is not None:
         # User inputs
         gender = st.selectbox("Select your gender", ["Female", "Male"])
@@ -489,9 +492,6 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         fat_grams = fat_calories / 9
         carb_grams = carb_calories / 4
         meal_fraction = 0.3
-        
-        # Reset previous recommendations when getting new recommendations
-        st.session_state.previous_recommendations = set()
         
         input_features = np.array([
             daily_calories * meal_fraction,
