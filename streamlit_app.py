@@ -474,11 +474,11 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                     fig2 = create_calories_summary_plot(selected_df)
                     st.pyplot(fig2)
         
-        return recommendations
-    else:
-        if not st.session_state.get('current_recommendations'):
-            st.warning("No recommendations found. Please try different inputs.")
-        return pd.DataFrame()
+            return recommendations
+        else:
+            if not st.session_state.get('current_recommendations'):
+                st.warning("No recommendations found. Please try different inputs.")
+            return pd.DataFrame()
 
     
     if st.button("Get Recommendations"):
