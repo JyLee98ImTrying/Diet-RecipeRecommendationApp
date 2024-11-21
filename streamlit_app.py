@@ -537,7 +537,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 # Update shown recommendations
                 st.session_state.previous_recommendations.update(new_recommendations.index.tolist())
                 # Display new recommendations
-                display_recommendations(new_recommendations)
+                display_recommendations_with_selection(new_recommendations)
             else:
                 st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
         else:
