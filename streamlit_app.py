@@ -376,16 +376,16 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         return steps
     
     def display_recommendations_with_selection(recommendations, key_prefix=''):
-    """
-    Display recommendations with checkboxes for selection with enhanced key management
-    
-    Parameters:
-    recommendations (pd.DataFrame): DataFrame of recipe recommendations
-    key_prefix (str): Unique prefix for checkbox keys to avoid collision
-    
-    Returns:
-    pd.DataFrame: Selected recipes
-    """
+        """
+        Display recommendations with checkboxes for selection with enhanced key management
+        
+        Parameters:
+        recommendations (pd.DataFrame): DataFrame of recipe recommendations
+        key_prefix (str): Unique prefix for checkbox keys to avoid collision
+        
+        Returns:
+        pd.DataFrame: Selected recipes
+        """
         # Ensure session state for tracking selections
         if 'selected_recipe_indices' not in st.session_state:
             st.session_state.selected_recipe_indices = set()
