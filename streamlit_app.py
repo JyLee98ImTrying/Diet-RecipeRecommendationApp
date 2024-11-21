@@ -386,38 +386,44 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         Returns:
         pd.DataFrame: Selected recipes
         """
-        # Ensure session state for tracking selections
-        if 'selected_recipe_indices' not in st.session_state:
-            st.session_state.selected_recipe_indices = set()
-        
-        if not recommendations.empty:
-            st.write("### 🍳 Recommended Food Items (Single Serving)")  
-            # Store current recommendations in session state
+        if 'current_recommendations' not in st.session_state:
+        st.session_state.current_recommendations = None
+    
+        # Store or retrieve recommendations
+        if recommendations is not None and not recommendations.empty:
             st.session_state.current_recommendations = recommendations
-            
+        else:
+            recommendations = st.session_state.current_recommendations
+    
+        if recommendations is not None and not recommendations.empty:
+            st.write("### 🍳 Recommended Food Items (Single Serving)")
+                
             # Create a container to hold selections
             selection_container = st.container()
             
             with selection_container:
+                selected_recipes = []
                 for idx, row in recommendations.iterrows():
-                    # Use a more unique and consistent key generation
                     unique_key = f'recipe_select_{key_prefix}_{idx}'
                     
                     with st.expander(f"📗 {row['Name']}"):
-                        # Create a checkbox with a unique key
                         is_selected = st.checkbox(
-                            "Select this recipe", 
+                            "Select this recipe",
                             key=unique_key,
-                            value=idx in st.session_state.selected_recipe_indices
+                            value=idx in st.session_state.get('selected_recipe_indices', set())
                         )
                         
-                        # Track selection state
+                        # Update selection state
+                        if 'selected_recipe_indices' not in st.session_state:
+                            st.session_state.selected_recipe_indices = set()
+                        
                         if is_selected:
                             st.session_state.selected_recipe_indices.add(idx)
+                            selected_recipes.append(row)
                         else:
                             st.session_state.selected_recipe_indices.discard(idx)
                         
-                        # Rest of the recipe display logic remains the same as before
+                        # Display recipe details
                         col1, col2 = st.columns(2)
                         
                         with col1:
@@ -453,30 +459,26 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                             st.write(f"{i}. {step}")
             
             # Prepare selected recipes
-            if st.session_state.selected_recipe_indices:
-                selected_recipes = recommendations.loc[list(st.session_state.selected_recipe_indices)]
-                
-                # Display selected recipes
+            if selected_recipes:
                 st.write("### 🍽️ Selected Recipes")
-                for _, row in selected_recipes.iterrows():
-                    st.write(f"• {row['Name']}")
+                selected_df = pd.DataFrame(selected_recipes)
+                for name in selected_df['Name']:
+                    st.write(f"• {name}")
                 
-                # Visualization button
                 if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
-                    # Nutritional Distribution Plot
                     st.write("### 🍽️ Nutritional Content Distribution")
-                    fig1 = create_nutrient_distribution_plot(selected_recipes)
+                    fig1 = create_nutrient_distribution_plot(selected_df)
                     st.pyplot(fig1)
                     
-                    # Calories Summary Plot
                     st.write("### 🔢 Calories Breakdown")
-                    fig2 = create_calories_summary_plot(selected_recipes)
+                    fig2 = create_calories_summary_plot(selected_df)
                     st.pyplot(fig2)
-            
-            return recommendations
-        else:
+        
+        return recommendations
+    else:
+        if not st.session_state.get('current_recommendations'):
             st.warning("No recommendations found. Please try different inputs.")
-            return pd.DataFrame()
+        return pd.DataFrame()
 
     
     if st.button("Get Recommendations"):
