@@ -375,18 +375,51 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         steps = [step.strip().strip('"') for step in instructions.split('",')]
         return steps
     
-    def display_recommendations(recommendations):
-        """Display recommendations in a vertical format with expandable recipe instructions."""
-        if not recommendations.empty:
-            st.write("### 🍳 Recommended Food Items (Single Serving)")
-            
-            # Display each recipe in a vertical format
+    def display_recommendations_with_selection(recommendations, key_prefix=''):
+    """
+    Display recommendations with checkboxes for selection with enhanced key management
+    
+    Parameters:
+    recommendations (pd.DataFrame): DataFrame of recipe recommendations
+    key_prefix (str): Unique prefix for checkbox keys to avoid collision
+    
+    Returns:
+    pd.DataFrame: Selected recipes
+    """
+    # Ensure session state for tracking selections
+    if 'selected_recipe_indices' not in st.session_state:
+        st.session_state.selected_recipe_indices = set()
+    
+    if not recommendations.empty:
+        st.write("### 🍳 Recommended Food Items (Single Serving)")  
+        # Store current recommendations in session state
+        st.session_state.current_recommendations = recommendations
+        
+        # Create a container to hold selections
+        selection_container = st.container()
+        
+        with selection_container:
             for idx, row in recommendations.iterrows():
+                # Use a more unique and consistent key generation
+                unique_key = f'recipe_select_{key_prefix}_{idx}'
+                
                 with st.expander(f"📗 {row['Name']}"):
-                    # Create three columns for better layout
+                    # Create a checkbox with a unique key
+                    is_selected = st.checkbox(
+                        "Select this recipe", 
+                        key=unique_key,
+                        value=idx in st.session_state.selected_recipe_indices
+                    )
+                    
+                    # Track selection state
+                    if is_selected:
+                        st.session_state.selected_recipe_indices.add(idx)
+                    else:
+                        st.session_state.selected_recipe_indices.discard(idx)
+                    
+                    # Rest of the recipe display logic remains the same as before
                     col1, col2 = st.columns(2)
                     
-                    # Nutritional Information in first column
                     with col1:
                         st.write("**📊 Nutritional Information**")
                         st.write(f"• Calories: {row['Calories']:.1f}")
@@ -394,7 +427,6 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                         st.write(f"• Fat: {row['FatContent']:.1f}g")
                         st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
                     
-                    # Additional nutritional details in second column
                     with col2:
                         st.write("**🔍 Additional Details**")
                         st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
@@ -419,11 +451,34 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                     instructions = format_recipe_instructions(row['RecipeInstructions'])
                     for i, step in enumerate(instructions, 1):
                         st.write(f"{i}. {step}")
-        else:
-            st.warning("No recommendations found. Please try different inputs.")
+        
+        # Prepare selected recipes
+        if st.session_state.selected_recipe_indices:
+            selected_recipes = recommendations.loc[list(st.session_state.selected_recipe_indices)]
+            
+            # Display selected recipes
+            st.write("### 🍽️ Selected Recipes")
+            for _, row in selected_recipes.iterrows():
+                st.write(f"• {row['Name']}")
+            
+            # Visualization button
+            if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
+                # Nutritional Distribution Plot
+                st.write("### 🍽️ Nutritional Content Distribution")
+                fig1 = create_nutrient_distribution_plot(selected_recipes)
+                st.pyplot(fig1)
+                
+                # Calories Summary Plot
+                st.write("### 🔢 Calories Breakdown")
+                fig2 = create_calories_summary_plot(selected_recipes)
+                st.pyplot(fig2)
+        
+        return recommendations
+    else:
+        st.warning("No recommendations found. Please try different inputs.")
+        return pd.DataFrame()
 
     
-    # In your main code, replace the recommendation display section with this:
     if st.button("Get Recommendations"):
         daily_calories = calculate_caloric_needs(gender, weight, height, age)
         protein_grams = 0.8 * weight
