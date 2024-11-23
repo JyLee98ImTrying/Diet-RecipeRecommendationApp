@@ -308,7 +308,7 @@ def create_calories_summary_plot(selected_recipes):
 
 # Sidebar for Page Navigation
 with st.sidebar.expander("Navigation", expanded=True):
-    page = st.radio("Go to:", ["ReadMe 📖", "🍅🧀MyHealthMyFood🥑🥬", "🔎Search & Visualize📊"])
+    page = st.radio("Go to:", ["ReadMe 📖", "🍅🧀MyHealthMyFood🥑🥬", "🔎Search for Recipes", "Recipe Data Visualization📊"])
 
 # Load data and models first
 df = load_data()
@@ -547,8 +547,8 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             st.warning("Please get initial recommendations first.")
 
 # Search and Visualization Page
-elif page == "🔎Search & Visualize📊":
-    st.title("🔎Search & Visualize📊")
+elif page == "🔎Search For Recipes":
+    st.title("🔎Search For Recipes")
 
     # Initialize session state for pagination
     if 'search_page' not in st.session_state:
@@ -663,7 +663,7 @@ elif page == "🔎Search & Visualize📊":
                 st.error(f"Error comparing {nutrient1} and {nutrient2}: {str(e)}")
 
 def visualization_page(df):
-    st.title("Recipe Data Visualization")
+    st.title("Recipe Data Visualization📊")
     
     # Data preprocessing
     # Convert TotalTime to numeric, removing any non-numeric characters
