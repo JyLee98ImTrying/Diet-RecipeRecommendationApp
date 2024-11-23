@@ -420,14 +420,16 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                     # Initialize expander state if it doesn't exist
                     if expander_key not in st.session_state.expander_states:
                         st.session_state.expander_states[expander_key] = False
-                    
-                    # Create expander with saved state
-                    with st.expander(
+    
+                    # Create the expander and store its state
+                    expanded = st.expander(
                         f"📗 {row['Name']}", 
                         expanded=st.session_state.expander_states[expander_key]
-                    ) as expander:
-                        # Update expander state
-                        st.session_state.expander_states[expander_key] = expander
+                    )
+                    
+                    with expanded:
+                        # Store the current expanded state
+                        st.session_state.expander_states[expander_key] = expanded._is_expanded
     
                         # Checkbox for recipe selection
                         is_selected = st.checkbox(
