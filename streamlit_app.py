@@ -669,7 +669,7 @@ elif page == "Recipe Data Visualization📊":
         
         # Data preprocessing
         # Convert TotalTime to numeric, removing any non-numeric characters
-           try:
+        try:
             # First ensure TotalTime is string type before string operations
             df['TotalTime'] = df['TotalTime'].astype(str)
             # Then extract numbers and convert to numeric
