@@ -8,6 +8,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 from itertools import zip_longest
+import plotly.express as px
+import plotly.graph_objects as go
 
 # Clear cache to ensure fresh data loading
 st.cache_data.clear()
@@ -305,9 +307,106 @@ def create_calories_summary_plot(selected_recipes):
     plt.tight_layout()
     return plt.gcf()
 
+def visualization_page(df):
+    st.title("Recipe Data Visualization")
+    
+    # Sidebar filters
+    st.sidebar.header("Filters")
+    selected_category = st.sidebar.multiselect(
+        "Select Recipe Categories",
+        options=df['RecipeCategory'].unique(),
+        default=df['RecipeCategory'].unique()[:3]
+    )
+    
+    # Filter data based on selection
+    filtered_df = df[df['RecipeCategory'].isin(selected_category)]
+    
+    # Interactive Chart 1: Scatter plot of Cooking Time vs Calories with hover info
+    st.subheader("Cooking Time vs Calories by Category")
+    fig1 = px.scatter(
+        filtered_df,
+        x='TotalTime',
+        y='Calories',
+        color='RecipeCategory',
+        hover_data=['Name'],
+        title='Recipe Cooking Time vs Calories',
+        size='RecipeYield'  # Size of points based on serving size
+    )
+    st.plotly_chart(fig1)
+    
+    # Interactive Chart 2: Nutrient Distribution by Category
+    st.subheader("Nutrient Distribution by Category")
+    nutrients = ['ProteinContent', 'CarbohydrateContent', 'FatContent']
+    selected_nutrient = st.selectbox("Select Nutrient", nutrients)
+    
+    fig2 = px.box(
+        filtered_df,
+        x='RecipeCategory',
+        y=selected_nutrient,
+        points='all',
+        title=f'{selected_nutrient} Distribution by Category'
+    )
+    fig2.update_layout(xaxis_tickangle=-45)
+    st.plotly_chart(fig2)
+    
+    # Interactive Chart 3: Macronutrient Composition
+    st.subheader("Recipe Macronutrient Composition")
+    num_recipes = st.slider("Select number of recipes to display", 5, 20, 10)
+    
+    # Get top recipes by calories
+    top_recipes = filtered_df.nlargest(num_recipes, 'Calories')
+    
+    fig3 = go.Figure()
+    fig3.add_trace(go.Bar(
+        name='Protein',
+        x=top_recipes['Name'],
+        y=top_recipes['ProteinContent'],
+    ))
+    fig3.add_trace(go.Bar(
+        name='Carbs',
+        x=top_recipes['Name'],
+        y=top_recipes['CarbohydrateContent'],
+    ))
+    fig3.add_trace(go.Bar(
+        name='Fat',
+        x=top_recipes['Name'],
+        y=top_recipes['FatContent'],
+    ))
+    
+    fig3.update_layout(
+        barmode='stack',
+        title='Macronutrient Composition of Top Caloric Recipes',
+        xaxis_tickangle=-45
+    )
+    st.plotly_chart(fig3)
+    
+    # EDA Charts
+    st.subheader("Exploratory Data Analysis")
+    
+    # EDA Chart 1: Correlation Heatmap
+    st.write("Correlation between Nutritional Values")
+    numeric_cols = ['Calories', 'FatContent', 'SaturatedFatContent', 
+                   'CholesterolContent', 'SodiumContent', 'CarbohydrateContent',
+                   'FiberContent', 'SugarContent', 'ProteinContent']
+    
+    fig4, ax = plt.subplots(figsize=(10, 8))
+    sns.heatmap(df[numeric_cols].corr(), annot=True, cmap='coolwarm', center=0)
+    plt.xticks(rotation=45)
+    plt.yticks(rotation=0)
+    st.pyplot(fig4)
+    
+    # EDA Chart 2: Recipe Category Distribution
+    st.write("Recipe Category Distribution")
+    fig5, ax = plt.subplots(figsize=(10, 6))
+    category_counts = df['RecipeCategory'].value_counts()
+    sns.barplot(x=category_counts.values, y=category_counts.index)
+    plt.xlabel('Number of Recipes')
+    plt.ylabel('Category')
+    st.pyplot(fig5)
+
 # Sidebar for Page Navigation
 with st.sidebar.expander("Navigation", expanded=True):
-    page = st.radio("Go to:", ["ReadMe 📖", "🍅🧀MyHealthMyFood🥑🥬", "🔎Search & Visualize📊"])
+    page = st.radio("Go to:", ["ReadMe 📖", "🍅🧀MyHealthMyFood🥑🥬", "🔎Search & Visualize📊", "Recipe Data Visualization"])
 
 # Load data and models first
 df = load_data()
@@ -343,10 +442,12 @@ if page == "ReadMe 📖":
 
 if 'recommendations' not in st.session_state:
     st.session_state.recommendations = None
-if 'expanded_items' not in st.session_state:
-    st.session_state.expanded_items = {}
 if 'selected_recipes' not in st.session_state:
     st.session_state.selected_recipes = set()
+if 'previous_recommendations' not in st.session_state:
+    st.session_state.previous_recommendations = set()
+if 'all_recommendations_cache' not in st.session_state:
+    st.session_state.all_recommendations_cache = None
 
 # Streamlit UI (Recommendation Page)
 if page == "🍅🧀MyHealthMyFood🥑🥬":
@@ -387,32 +488,6 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         Returns:
         pd.DataFrame: Selected recipes
         """
-        if st.session_state.recommendations is not None:
-            for idx, rec in enumerate(st.session_state.recommendations):
-                # Create unique keys for each recipe
-                checkbox_key = f"checkbox_{idx}"
-                expander_key = f"expander_{idx}"
-                
-                # Initialize expanded state if not exists
-                if expander_key not in st.session_state.expanded_items:
-                    st.session_state.expanded_items[expander_key] = False
-                
-                col1, col2 = st.columns([0.1, 0.9])
-                with col1:
-                    if st.checkbox("", key=checkbox_key, 
-                                 value=idx in st.session_state.selected_recipes):
-                        st.session_state.selected_recipes.add(idx)
-                    else:
-                        st.session_state.selected_recipes.discard(idx)
-                
-                with col2:
-                    with st.expander(rec['name'], expanded=st.session_state.expanded_items[expander_key]):
-                        # Store the expanded state
-                        st.session_state.expanded_items[expander_key] = True
-                        # Display recipe details
-                        st.write(rec['details'])
-
-        
         if 'current_recommendations' not in st.session_state:
             st.session_state.current_recommendations = None
     
@@ -684,3 +759,7 @@ elif page == "🔎Search & Visualize📊":
                 st.line_chart(df[[nutrient1, nutrient2]])
             except Exception as e:
                 st.error(f"Error comparing {nutrient1} and {nutrient2}: {str(e)}")
+
+# Recipe Data Visualization Page
+elif page == "Recipe Data Visualization":
+    visualization_page(df)
