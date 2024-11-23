@@ -387,6 +387,32 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         Returns:
         pd.DataFrame: Selected recipes
         """
+        if st.session_state.recommendations is not None:
+            for idx, rec in enumerate(st.session_state.recommendations):
+                # Create unique keys for each recipe
+                checkbox_key = f"checkbox_{idx}"
+                expander_key = f"expander_{idx}"
+                
+                # Initialize expanded state if not exists
+                if expander_key not in st.session_state.expanded_items:
+                    st.session_state.expanded_items[expander_key] = False
+                
+                col1, col2 = st.columns([0.1, 0.9])
+                with col1:
+                    if st.checkbox("", key=checkbox_key, 
+                                 value=idx in st.session_state.selected_recipes):
+                        st.session_state.selected_recipes.add(idx)
+                    else:
+                        st.session_state.selected_recipes.discard(idx)
+                
+                with col2:
+                    with st.expander(rec['name'], expanded=st.session_state.expanded_items[expander_key]):
+                        # Store the expanded state
+                        st.session_state.expanded_items[expander_key] = True
+                        # Display recipe details
+                        st.write(rec['details'])
+
+        
         if 'current_recommendations' not in st.session_state:
             st.session_state.current_recommendations = None
     
