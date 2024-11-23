@@ -661,7 +661,7 @@ elif page == "Recipe Data Visualization📊":
         selected_category = st.sidebar.multiselect(
             "Select Recipe Categories",
             options=available_categories,
-            default=available_categories[4:] if len(available_categories) >= 3 else available_categories
+            default=available_categories[2:] if len(available_categories) >= 3 else available_categories
         )
         
         # Filter data based on selection
