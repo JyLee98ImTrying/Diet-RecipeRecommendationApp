@@ -9,6 +9,7 @@ import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 from itertools import zip_longest
 import plotly.express as px
+import xgboost as xgb
 
 # Clear cache to ensure fresh data loading
 st.cache_data.clear()
@@ -35,7 +36,7 @@ def load_models():
     try:
         model_files = {
             'kmeans': 'kmeans.pkl',
-            'rf_classifier': 'rf_classifier.pkl',
+            'xgb_classifier': 'xgb_classifier.pkl',
             'scaler': 'scaler.pkl'
         }
         
@@ -213,8 +214,8 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         
         cluster_data['Similarity'] = similarities
         
-        rf_predictions = models['rf_classifier'].predict(cluster_features_scaled)
-        cluster_data['Classification'] = rf_predictions
+        xgb_predictions = models['xgb_classifier'].predict(cluster_features_scaled)
+        cluster_data['Classification'] = xgb_predictions
         
         final_recommendations = cluster_data[cluster_data['Classification'] == 1].sort_values(
             by='Similarity', ascending=False
