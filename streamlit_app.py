@@ -1,4 +1,3 @@
-
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -9,8 +8,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 from itertools import zip_longest
-import plotly.express as px
-import plotly.graph_objects as go
 
 # Clear cache to ensure fresh data loading
 st.cache_data.clear()
@@ -346,12 +343,10 @@ if page == "ReadMe 📖":
 
 if 'recommendations' not in st.session_state:
     st.session_state.recommendations = None
+if 'expanded_items' not in st.session_state:
+    st.session_state.expanded_items = {}
 if 'selected_recipes' not in st.session_state:
     st.session_state.selected_recipes = set()
-if 'previous_recommendations' not in st.session_state:
-    st.session_state.previous_recommendations = set()
-if 'all_recommendations_cache' not in st.session_state:
-    st.session_state.all_recommendations_cache = None
 
 # Streamlit UI (Recommendation Page)
 if page == "🍅🧀MyHealthMyFood🥑🥬":
@@ -663,58 +658,3 @@ elif page == "🔎Search & Visualize📊":
                 st.line_chart(df[[nutrient1, nutrient2]])
             except Exception as e:
                 st.error(f"Error comparing {nutrient1} and {nutrient2}: {str(e)}")
-                
-# Initialize session state for selections if not exists
-if 'selected_recipes' not in st.session_state:
-    st.session_state.selected_recipes = []
-
-# Display recommendations with checkboxes and track selections
-selected_indices = []
-if st.session_state.recommendations is not None:
-    for idx, rec in enumerate(st.session_state.recommendations):
-        col1, col2 = st.columns([0.1, 0.9])
-        with col1:
-            if st.checkbox("", key=f"checkbox_{idx}"):
-                selected_indices.append(idx)
-        with col2:
-            st.write(rec)
-
-    # Get nutritional data for selected recipes
-    if selected_indices:
-        selected_recipes = [st.session_state.recommendations[i] for i in selected_indices]
-        
-        # Assuming your recipes have nutritional info in this format
-        # Modify according to your data structure
-        nutrition_data = pd.DataFrame([
-            {
-                'Recipe': recipe['name'],
-                'Calories': recipe['calories'],
-                'Protein': recipe['protein'],
-                'Carbs': recipe['carbs'],
-                'Fat': recipe['fat']
-            } for recipe in selected_recipes
-        ])
-
-        # Create distribution plot
-        st.subheader("Nutritional Content Distribution")
-        fig_dist = px.box(
-            nutrition_data.melt(id_vars=['Recipe'], 
-                              value_vars=['Protein', 'Carbs', 'Fat']),
-            x='variable',
-            y='value',
-            points='all',
-            title='Distribution of Macronutrients in Selected Recipes'
-        )
-        st.plotly_chart(fig_dist)
-
-        # Create calories bar plot
-        st.subheader("Calories Comparison")
-        fig_calories = px.bar(
-            nutrition_data,
-            x='Recipe',
-            y='Calories',
-            title='Calories in Selected Recipes'
-        )
-        fig_calories.update_layout(xaxis_tickangle=-45)
-        st.plotly_chart(fig_calories)
-
