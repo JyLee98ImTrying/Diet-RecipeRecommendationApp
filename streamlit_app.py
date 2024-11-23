@@ -658,10 +658,13 @@ elif page == "Recipe Data Visualization📊":
         # Sidebar filters
         st.sidebar.header("Filters")
         available_categories = sorted(df['RecipeCategory'].unique())
+        default_categories = ["Breakfast", "Lunch/Snacks", "Dinner"]
+        # Filter default categories to include only those present in the dataset
+        valid_defaults = [category for category in default_categories if category in available_categories] 
         selected_category = st.sidebar.multiselect(
             "Select Recipe Categories",
             options=available_categories,
-            default=available_categories[2:] if len(available_categories) >= 3 else available_categories
+            default=valid_defaults
         )
         
         # Filter data based on selection
