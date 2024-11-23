@@ -25,3 +25,4 @@ elif page == "🍅🧀MyHealthMyFood🥑🥬":
     recommendation_page.render_page(df, models)
 elif page == "🔎Search & Visualize📊":
     search_visualize_page.render_page(df)
+
