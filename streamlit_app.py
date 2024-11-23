@@ -669,148 +669,148 @@ elif page == "Recipe Data Visualization📊":
         
         # Data preprocessing
         # Convert TotalTime to numeric, removing any non-numeric characters
-       try:
-        # First ensure TotalTime is string type before string operations
-        df['TotalTime'] = df['TotalTime'].astype(str)
-        # Then extract numbers and convert to numeric
-        df['TotalTime'] = pd.to_numeric(df['TotalTime'].str.extract('(\d+)')[0], errors='coerce')
-    except Exception as e:
-        st.warning(f"Error processing TotalTime: {str(e)}")
-        df['TotalTime'] = pd.NA
-    
-    # Ensure numeric columns are properly converted
-    numeric_columns = ['Calories', 'FatContent', 'CarbohydrateContent', 'ProteinContent', 'RecipeYield']
-    for col in numeric_columns:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
-    
-    # Handle missing categories
-    df['RecipeCategory'] = df['RecipeCategory'].fillna('Uncategorized')
-    
-    # Sidebar filters
-    st.sidebar.header("Filters")
-    available_categories = sorted(df['RecipeCategory'].unique())
-    selected_category = st.sidebar.multiselect(
-        "Select Recipe Categories",
-        options=available_categories,
-        default=available_categories[:3] if len(available_categories) >= 3 else available_categories
-    )
-    
-    # Filter data based on selection
-    if selected_category:
-        filtered_df = df[df['RecipeCategory'].isin(selected_category)]
-    else:
-        filtered_df = df
-    
-    # Only proceed with visualization if we have data
-    if filtered_df.empty:
-        st.warning("No data available for the selected filters.")
-        return
+           try:
+            # First ensure TotalTime is string type before string operations
+            df['TotalTime'] = df['TotalTime'].astype(str)
+            # Then extract numbers and convert to numeric
+            df['TotalTime'] = pd.to_numeric(df['TotalTime'].str.extract('(\d+)')[0], errors='coerce')
+        except Exception as e:
+            st.warning(f"Error processing TotalTime: {str(e)}")
+            df['TotalTime'] = pd.NA
         
-    # Interactive Chart 1: Scatter plot of Cooking Time vs Calories
-    st.subheader("Cooking Time vs Calories by Category")
-    # Remove rows where TotalTime or Calories is null for this visualization
-    scatter_df = filtered_df.dropna(subset=['TotalTime', 'Calories'])
-    if not scatter_df.empty:
-        fig1 = px.scatter(
-            scatter_df,
-            x='TotalTime',
-            y='Calories',
-            color='RecipeCategory',
-            hover_data=['Name'],
-            title='Recipe Cooking Time vs Calories',
-            labels={'TotalTime': 'Cooking Time (minutes)', 
-                    'Calories': 'Calories',
-                    'RecipeCategory': 'Category'}
-        )
-        st.plotly_chart(fig1)
-    else:
-        st.warning("Insufficient data for cooking time vs calories visualization")
-    
-    # Interactive Chart 2: Nutrient Distribution by Category
-    st.subheader("Nutrient Distribution by Category")
-    nutrients = {
-        'ProteinContent': 'Protein (g)',
-        'CarbohydrateContent': 'Carbohydrates (g)',
-        'FatContent': 'Fat (g)'
-    }
-    selected_nutrient = st.selectbox("Select Nutrient", list(nutrients.keys()), 
-                                   format_func=lambda x: nutrients[x])
-    
-    # Remove null values for the selected nutrient
-    box_df = filtered_df.dropna(subset=[selected_nutrient])
-    if not box_df.empty:
-        fig2 = px.box(
-            box_df,
-            x='RecipeCategory',
-            y=selected_nutrient,
-            points='all',
-            title=f'{nutrients[selected_nutrient]} Distribution by Category'
-        )
-        fig2.update_layout(xaxis_tickangle=-45)
-        st.plotly_chart(fig2)
-    else:
-        st.warning(f"Insufficient data for {nutrients[selected_nutrient]} distribution")
-    
-    # Interactive Chart 3: Top Recipes by Calories
-    st.subheader("Top Recipes by Calories")
-    num_recipes = st.slider("Select number of recipes to display", 5, 20, 10)
-    
-    # Remove null calories for top recipes chart
-    calories_df = filtered_df.dropna(subset=['Calories'])
-    if not calories_df.empty:
-        top_recipes = calories_df.nlargest(num_recipes, 'Calories')
+        # Ensure numeric columns are properly converted
+        numeric_columns = ['Calories', 'FatContent', 'CarbohydrateContent', 'ProteinContent', 'RecipeYield']
+        for col in numeric_columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
         
-        fig3 = px.bar(
-            top_recipes,
-            x='Name',
-            y='Calories',
-            color='RecipeCategory',
-            title=f'Top {num_recipes} Recipes by Calories',
-            labels={'Name': 'Recipe Name', 'Calories': 'Calories'}
-        )
-        fig3.update_layout(xaxis_tickangle=-45)
-        st.plotly_chart(fig3)
-    else:
-        st.warning("Insufficient data for top recipes visualization")
-    
-    # EDA Charts
-    st.subheader("Exploratory Data Analysis")
-    
-    # EDA Chart 1: Correlation Heatmap
-    st.write("Correlation between Nutritional Values")
-    numeric_cols = ['Calories', 'FatContent', 'CarbohydrateContent', 'ProteinContent']
-    
-    # Remove rows with null values for correlation
-    corr_df = filtered_df[numeric_cols].dropna()
-    if not corr_df.empty:
-        # Create correlation matrix
-        corr_matrix = corr_df.corr()
+        # Handle missing categories
+        df['RecipeCategory'] = df['RecipeCategory'].fillna('Uncategorized')
         
-        fig4 = px.imshow(
-            corr_matrix,
-            labels=dict(color="Correlation"),
-            x=numeric_cols,
-            y=numeric_cols,
-            color_continuous_scale='RdBu_r',
-            aspect='auto'
+        # Sidebar filters
+        st.sidebar.header("Filters")
+        available_categories = sorted(df['RecipeCategory'].unique())
+        selected_category = st.sidebar.multiselect(
+            "Select Recipe Categories",
+            options=available_categories,
+            default=available_categories[:3] if len(available_categories) >= 3 else available_categories
         )
-        fig4.update_layout(title='Nutrient Correlation Matrix')
-        st.plotly_chart(fig4)
-    else:
-        st.warning("Insufficient data for correlation analysis")
-    
-    # EDA Chart 2: Recipe Category Distribution
-    st.write("Recipe Category Distribution")
-    category_counts = filtered_df['RecipeCategory'].value_counts()
-    
-    fig5 = px.bar(
-        x=category_counts.values,
-        y=category_counts.index,
-        orientation='h',
-        title='Recipe Category Distribution',
-        labels={'x': 'Number of Recipes', 'y': 'Category'}
-    )
-    st.plotly_chart(fig5)
+        
+        # Filter data based on selection
+        if selected_category:
+            filtered_df = df[df['RecipeCategory'].isin(selected_category)]
+        else:
+            filtered_df = df
+        
+        # Only proceed with visualization if we have data
+        if filtered_df.empty:
+            st.warning("No data available for the selected filters.")
+            return
+            
+        # Interactive Chart 1: Scatter plot of Cooking Time vs Calories
+        st.subheader("Cooking Time vs Calories by Category")
+        # Remove rows where TotalTime or Calories is null for this visualization
+        scatter_df = filtered_df.dropna(subset=['TotalTime', 'Calories'])
+        if not scatter_df.empty:
+            fig1 = px.scatter(
+                scatter_df,
+                x='TotalTime',
+                y='Calories',
+                color='RecipeCategory',
+                hover_data=['Name'],
+                title='Recipe Cooking Time vs Calories',
+                labels={'TotalTime': 'Cooking Time (minutes)', 
+                        'Calories': 'Calories',
+                        'RecipeCategory': 'Category'}
+            )
+            st.plotly_chart(fig1)
+        else:
+            st.warning("Insufficient data for cooking time vs calories visualization")
+        
+        # Interactive Chart 2: Nutrient Distribution by Category
+        st.subheader("Nutrient Distribution by Category")
+        nutrients = {
+            'ProteinContent': 'Protein (g)',
+            'CarbohydrateContent': 'Carbohydrates (g)',
+            'FatContent': 'Fat (g)'
+        }
+        selected_nutrient = st.selectbox("Select Nutrient", list(nutrients.keys()), 
+                                       format_func=lambda x: nutrients[x])
+        
+        # Remove null values for the selected nutrient
+        box_df = filtered_df.dropna(subset=[selected_nutrient])
+        if not box_df.empty:
+            fig2 = px.box(
+                box_df,
+                x='RecipeCategory',
+                y=selected_nutrient,
+                points='all',
+                title=f'{nutrients[selected_nutrient]} Distribution by Category'
+            )
+            fig2.update_layout(xaxis_tickangle=-45)
+            st.plotly_chart(fig2)
+        else:
+            st.warning(f"Insufficient data for {nutrients[selected_nutrient]} distribution")
+        
+        # Interactive Chart 3: Top Recipes by Calories
+        st.subheader("Top Recipes by Calories")
+        num_recipes = st.slider("Select number of recipes to display", 5, 20, 10)
+        
+        # Remove null calories for top recipes chart
+        calories_df = filtered_df.dropna(subset=['Calories'])
+        if not calories_df.empty:
+            top_recipes = calories_df.nlargest(num_recipes, 'Calories')
+            
+            fig3 = px.bar(
+                top_recipes,
+                x='Name',
+                y='Calories',
+                color='RecipeCategory',
+                title=f'Top {num_recipes} Recipes by Calories',
+                labels={'Name': 'Recipe Name', 'Calories': 'Calories'}
+            )
+            fig3.update_layout(xaxis_tickangle=-45)
+            st.plotly_chart(fig3)
+        else:
+            st.warning("Insufficient data for top recipes visualization")
+        
+        # EDA Charts
+        st.subheader("Exploratory Data Analysis")
+        
+        # EDA Chart 1: Correlation Heatmap
+        st.write("Correlation between Nutritional Values")
+        numeric_cols = ['Calories', 'FatContent', 'CarbohydrateContent', 'ProteinContent']
+        
+        # Remove rows with null values for correlation
+        corr_df = filtered_df[numeric_cols].dropna()
+        if not corr_df.empty:
+            # Create correlation matrix
+            corr_matrix = corr_df.corr()
+            
+            fig4 = px.imshow(
+                corr_matrix,
+                labels=dict(color="Correlation"),
+                x=numeric_cols,
+                y=numeric_cols,
+                color_continuous_scale='RdBu_r',
+                aspect='auto'
+            )
+            fig4.update_layout(title='Nutrient Correlation Matrix')
+            st.plotly_chart(fig4)
+        else:
+            st.warning("Insufficient data for correlation analysis")
+        
+        # EDA Chart 2: Recipe Category Distribution
+        st.write("Recipe Category Distribution")
+        category_counts = filtered_df['RecipeCategory'].value_counts()
+        
+        fig5 = px.bar(
+            x=category_counts.values,
+            y=category_counts.index,
+            orientation='h',
+            title='Recipe Category Distribution',
+            labels={'x': 'Number of Recipes', 'y': 'Category'}
+        )
+        st.plotly_chart(fig5)
     
     # Call the visualization page function with the loaded dataframe
     if df is not None:
