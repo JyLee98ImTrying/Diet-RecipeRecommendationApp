@@ -9,7 +9,6 @@ import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 from itertools import zip_longest
 import plotly.express as px
-import plotly.graph_objects as go
 
 # Clear cache to ensure fresh data loading
 st.cache_data.clear()
@@ -307,106 +306,9 @@ def create_calories_summary_plot(selected_recipes):
     plt.tight_layout()
     return plt.gcf()
 
-def visualization_page(df):
-    st.title("Recipe Data Visualization")
-    
-    # Sidebar filters
-    st.sidebar.header("Filters")
-    selected_category = st.sidebar.multiselect(
-        "Select Recipe Categories",
-        options=df['RecipeCategory'].unique(),
-        default=df['RecipeCategory'].unique()[:3]
-    )
-    
-    # Filter data based on selection
-    filtered_df = df[df['RecipeCategory'].isin(selected_category)]
-    
-    # Interactive Chart 1: Scatter plot of Cooking Time vs Calories with hover info
-    st.subheader("Cooking Time vs Calories by Category")
-    fig1 = px.scatter(
-        filtered_df,
-        x='TotalTime',
-        y='Calories',
-        color='RecipeCategory',
-        hover_data=['Name'],
-        title='Recipe Cooking Time vs Calories',
-        size='RecipeYield'  # Size of points based on serving size
-    )
-    st.plotly_chart(fig1)
-    
-    # Interactive Chart 2: Nutrient Distribution by Category
-    st.subheader("Nutrient Distribution by Category")
-    nutrients = ['ProteinContent', 'CarbohydrateContent', 'FatContent']
-    selected_nutrient = st.selectbox("Select Nutrient", nutrients)
-    
-    fig2 = px.box(
-        filtered_df,
-        x='RecipeCategory',
-        y=selected_nutrient,
-        points='all',
-        title=f'{selected_nutrient} Distribution by Category'
-    )
-    fig2.update_layout(xaxis_tickangle=-45)
-    st.plotly_chart(fig2)
-    
-    # Interactive Chart 3: Macronutrient Composition
-    st.subheader("Recipe Macronutrient Composition")
-    num_recipes = st.slider("Select number of recipes to display", 5, 20, 10)
-    
-    # Get top recipes by calories
-    top_recipes = filtered_df.nlargest(num_recipes, 'Calories')
-    
-    fig3 = go.Figure()
-    fig3.add_trace(go.Bar(
-        name='Protein',
-        x=top_recipes['Name'],
-        y=top_recipes['ProteinContent'],
-    ))
-    fig3.add_trace(go.Bar(
-        name='Carbs',
-        x=top_recipes['Name'],
-        y=top_recipes['CarbohydrateContent'],
-    ))
-    fig3.add_trace(go.Bar(
-        name='Fat',
-        x=top_recipes['Name'],
-        y=top_recipes['FatContent'],
-    ))
-    
-    fig3.update_layout(
-        barmode='stack',
-        title='Macronutrient Composition of Top Caloric Recipes',
-        xaxis_tickangle=-45
-    )
-    st.plotly_chart(fig3)
-    
-    # EDA Charts
-    st.subheader("Exploratory Data Analysis")
-    
-    # EDA Chart 1: Correlation Heatmap
-    st.write("Correlation between Nutritional Values")
-    numeric_cols = ['Calories', 'FatContent', 'SaturatedFatContent', 
-                   'CholesterolContent', 'SodiumContent', 'CarbohydrateContent',
-                   'FiberContent', 'SugarContent', 'ProteinContent']
-    
-    fig4, ax = plt.subplots(figsize=(10, 8))
-    sns.heatmap(df[numeric_cols].corr(), annot=True, cmap='coolwarm', center=0)
-    plt.xticks(rotation=45)
-    plt.yticks(rotation=0)
-    st.pyplot(fig4)
-    
-    # EDA Chart 2: Recipe Category Distribution
-    st.write("Recipe Category Distribution")
-    fig5, ax = plt.subplots(figsize=(10, 6))
-    category_counts = df['RecipeCategory'].value_counts()
-    sns.barplot(x=category_counts.values, y=category_counts.index)
-    plt.xlabel('Number of Recipes')
-    plt.ylabel('Category')
-    st.pyplot(fig5)
-
 # Sidebar for Page Navigation
 with st.sidebar.expander("Navigation", expanded=True):
-    page = st.radio("Go to:", ["ReadMe 📖", "🍅🧀MyHealthMyFood🥑🥬", "🔎Search & Visualize📊", "Recipe Data Visualization"])
+    page = st.radio("Go to:", ["ReadMe 📖", "🍅🧀MyHealthMyFood🥑🥬", "🔎Search & Visualize📊"])
 
 # Load data and models first
 df = load_data()
@@ -760,6 +662,113 @@ elif page == "🔎Search & Visualize📊":
             except Exception as e:
                 st.error(f"Error comparing {nutrient1} and {nutrient2}: {str(e)}")
 
-# Recipe Data Visualization Page
-elif page == "Recipe Data Visualization":
-    visualization_page(df)
+def visualization_page(df):
+    st.title("Recipe Data Visualization")
+    
+    # Data preprocessing
+    # Convert TotalTime to numeric, removing any non-numeric characters
+    df['TotalTime'] = pd.to_numeric(df['TotalTime'].str.extract('(\d+)')[0], errors='coerce')
+    
+    # Ensure numeric columns are properly converted
+    numeric_columns = ['Calories', 'FatContent', 'CarbohydrateContent', 'ProteinContent', 'RecipeYield']
+    for col in numeric_columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    
+    # Sidebar filters
+    st.sidebar.header("Filters")
+    selected_category = st.sidebar.multiselect(
+        "Select Recipe Categories",
+        options=sorted(df['RecipeCategory'].unique()),
+        default=sorted(df['RecipeCategory'].unique())[:3]
+    )
+    
+    # Filter data based on selection
+    filtered_df = df[df['RecipeCategory'].isin(selected_category)]
+    
+    # Interactive Chart 1: Scatter plot of Cooking Time vs Calories
+    st.subheader("Cooking Time vs Calories by Category")
+    fig1 = px.scatter(
+        filtered_df,
+        x='TotalTime',
+        y='Calories',
+        color='RecipeCategory',
+        hover_data=['Name'],
+        title='Recipe Cooking Time vs Calories',
+        labels={'TotalTime': 'Cooking Time (minutes)', 
+                'Calories': 'Calories',
+                'RecipeCategory': 'Category'}
+    )
+    st.plotly_chart(fig1)
+    
+    # Interactive Chart 2: Nutrient Distribution by Category
+    st.subheader("Nutrient Distribution by Category")
+    nutrients = {
+        'ProteinContent': 'Protein (g)',
+        'CarbohydrateContent': 'Carbohydrates (g)',
+        'FatContent': 'Fat (g)'
+    }
+    selected_nutrient = st.selectbox("Select Nutrient", list(nutrients.keys()), 
+                                   format_func=lambda x: nutrients[x])
+    
+    fig2 = px.box(
+        filtered_df,
+        x='RecipeCategory',
+        y=selected_nutrient,
+        points='all',
+        title=f'{nutrients[selected_nutrient]} Distribution by Category'
+    )
+    fig2.update_layout(xaxis_tickangle=-45)
+    st.plotly_chart(fig2)
+    
+    # Interactive Chart 3: Top Recipes by Calories
+    st.subheader("Top Recipes by Calories")
+    num_recipes = st.slider("Select number of recipes to display", 5, 20, 10)
+    
+    # Get top recipes by calories
+    top_recipes = filtered_df.nlargest(num_recipes, 'Calories')
+    
+    fig3 = px.bar(
+        top_recipes,
+        x='Name',
+        y='Calories',
+        color='RecipeCategory',
+        title=f'Top {num_recipes} Recipes by Calories',
+        labels={'Name': 'Recipe Name', 'Calories': 'Calories'}
+    )
+    fig3.update_layout(xaxis_tickangle=-45)
+    st.plotly_chart(fig3)
+    
+    # EDA Charts
+    st.subheader("Exploratory Data Analysis")
+    
+    # EDA Chart 1: Correlation Heatmap
+    st.write("Correlation between Nutritional Values")
+    numeric_cols = ['Calories', 'FatContent', 'CarbohydrateContent', 
+                   'ProteinContent']
+    
+    # Create correlation matrix
+    corr_matrix = df[numeric_cols].corr()
+    
+    fig4 = px.imshow(
+        corr_matrix,
+        labels=dict(color="Correlation"),
+        x=numeric_cols,
+        y=numeric_cols,
+        color_continuous_scale='RdBu_r',
+        aspect='auto'
+    )
+    fig4.update_layout(title='Nutrient Correlation Matrix')
+    st.plotly_chart(fig4)
+    
+    # EDA Chart 2: Recipe Category Distribution
+    st.write("Recipe Category Distribution")
+    category_counts = df['RecipeCategory'].value_counts()
+    
+    fig5 = px.bar(
+        x=category_counts.values,
+        y=category_counts.index,
+        orientation='h',
+        title='Recipe Category Distribution',
+        labels={'x': 'Number of Recipes', 'y': 'Category'}
+    )
+    st.plotly_chart(fig5)
