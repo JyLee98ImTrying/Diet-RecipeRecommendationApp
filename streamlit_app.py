@@ -381,7 +381,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
     
     def display_recommendations_with_selection(recommendations, key_prefix=''):
         """
-        Display recommendations with checkboxes for selection with enhanced state management
+        Display recommendations with checkboxes for selection with enhanced key management
         
         Parameters:
         recommendations (pd.DataFrame): DataFrame of recipe recommendations
@@ -390,13 +390,8 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         Returns:
         pd.DataFrame: Selected recipes
         """
-        # Initialize session states if they don't exist
         if 'current_recommendations' not in st.session_state:
             st.session_state.current_recommendations = None
-        if 'expander_states' not in st.session_state:
-            st.session_state.expander_states = {}
-        if 'selected_recipe_indices' not in st.session_state:
-            st.session_state.selected_recipe_indices = set()
     
         # Store or retrieve recommendations
         if recommendations is not None and not recommendations.empty:
@@ -413,32 +408,19 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             with selection_container:
                 selected_recipes = []
                 for idx, row in recommendations.iterrows():
-                    # Create unique keys for each recipe's state
-                    expander_key = f'expander_{key_prefix}_{idx}'
-                    checkbox_key = f'recipe_select_{key_prefix}_{idx}'
+                    unique_key = f'recipe_select_{key_prefix}_{idx}'
                     
-                    # Initialize expander state if it doesn't exist
-                    if expander_key not in st.session_state.expander_states:
-                        st.session_state.expander_states[expander_key] = False
-    
-                    # Create the expander and store its state
-                    expanded = st.expander(
-                        f"📗 {row['Name']}", 
-                        expanded=st.session_state.expander_states[expander_key]
-                    )
-                    
-                    with expanded:
-                        # Store the current expanded state
-                        st.session_state.expander_states[expander_key] = expanded._is_expanded
-    
-                        # Checkbox for recipe selection
+                    with st.expander(f"📗 {row['Name']}"):
                         is_selected = st.checkbox(
                             "Select this recipe",
-                            key=checkbox_key,
-                            value=idx in st.session_state.selected_recipe_indices
+                            key=unique_key,
+                            value=idx in st.session_state.get('selected_recipe_indices', set())
                         )
                         
                         # Update selection state
+                        if 'selected_recipe_indices' not in st.session_state:
+                            st.session_state.selected_recipe_indices = set()
+                        
                         if is_selected:
                             st.session_state.selected_recipe_indices.add(idx)
                             selected_recipes.append(row)
@@ -480,7 +462,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                         for i, step in enumerate(instructions, 1):
                             st.write(f"{i}. {step}")
             
-            # Display selected recipes summary
+            # Prepare selected recipes
             if selected_recipes:
                 st.write("### 🍽️ Selected Recipes")
                 selected_df = pd.DataFrame(selected_recipes)
