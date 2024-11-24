@@ -288,7 +288,7 @@ def create_calories_summary_plot(selected_recipes):
 
 # Sidebar for Page Navigation
 with st.sidebar.expander("Navigation", expanded=True):
-    page = st.radio("Go to:", ["ReadMe 📖", "🍅🧀MyHealthMyFood🥑🥬", "🔎Search for Recipes", "Recipe Data Visualization📊", "⚖️Weight Loss Prediction"])
+    page = st.radio("Go to:", ["ReadMe 📖", "🍅🧀MyHealthMyFood🥑🥬", "⚖️Weight Loss Prediction"], "🔎Search for Recipes", "Recipe Data Visualization📊", )
 
 # Load data and models first
 df = load_data()
@@ -302,18 +302,18 @@ def render_readme_page():
     
     The app offers 3 powerful features:
     
-    ### 1 - The Star of the Show ⭐
+    ### 1 - The Star of the Show ⭐ Diet Recipe Recommendation [Even for people with diabetes, high blood pressure and high cholesterol]
     Recipes are recommended through advanced machine learning techniques:
     - **KMeans Clustering**: Clusters recipes to identify similar groups
-    - **Random Forest Classification**: Classifies and predicts food items
+    - **XGBoost**: Classifies and predicts food items
     - **Content-Based Recommendation**: Suggests recipes based on item similarity
     
-    ### 2 - Recipe Search 🔎
-    - Search recipes using keywords like "Fish", "Chicken", "Egg", and more
-    - View detailed nutritional information
-    - Access calorie details for each recipe
+    All you have to do is key in your information, and let the model do the rest 👌 
+    You can even select recipes you like to calculate the total caloric and nutrition intake you'll consume, if you prepare according to the recipes! 
 
-    ### 3 - Weight Loss Prediction ⚖️
+    Happy meal-prepping and bon voyage to your goals! 🚢
+
+    ### 2 - Weight Loss Prediction ⚖️
     - Taking reference from the Mifflin-St Jeor Equation, this predictor predicts the expected weightloss by activities level, gender and age.
     - However, to achieve your weight loss goals in a safe and realistic manner:-
             1. Combine your calorie deficit with regular physical activity
@@ -321,6 +321,14 @@ def render_readme_page():
             3. Stay hydrated by drinking plenty of water
             4. Get adequate sleep (7-9 hours per night)
             5. Track your progress regularly but don't obsess over daily fluctuations
+    
+    ### 3 - Recipe Search 🔎
+    - Search recipes using keywords like "Fish", "Chicken", "Egg", and more 🐟🐔🥚
+    - View detailed nutritional information
+    - Access calorie details for each recipe
+
+    ### 4 - Recipe Data Visualisation 📊
+    - Want to know what are the general information about the recipe data you have access to? Just visit and tweak the configurations accordingly! 
 
     
     """)
