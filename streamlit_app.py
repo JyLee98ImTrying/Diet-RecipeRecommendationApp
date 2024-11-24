@@ -871,7 +871,8 @@ elif page == "⚖️Weight Loss Prediction":
 
     if st.button("Calculate Weight Loss Plan"):
         # Calculate time until target date
-        days_to_goal = (target_date - datetime.datetime.now().date()).days
+        start_date = datetime.datetime.now().date()
+        days_to_goal = (target_date - start_date).days
         weeks_to_goal = days_to_goal / 7
         
         # Calculate total weight to lose
@@ -910,6 +911,42 @@ elif page == "⚖️Weight Loss Prediction":
         # Calculate target daily calories
         target_calories = tdee - daily_deficit
         
+        # Create weight progression data for the graph
+        dates = pd.date_range(start=start_date, end=target_date, freq='W')
+        weights = [current_weight - (required_weekly_loss * i) for i in range(len(dates))]
+        
+        # Create a DataFrame for the graph
+        progress_df = pd.DataFrame({
+            'Date': dates,
+            'Weight': weights,
+            'Type': 'Projected Weight'
+        })
+        
+        # Add target weight line
+        target_line = pd.DataFrame({
+            'Date': [start_date, target_date],
+            'Weight': [target_weight, target_weight],
+            'Type': 'Target Weight'
+        })
+        
+        # Combine the dataframes
+        plot_df = pd.concat([progress_df, target_line])
+        
+        # Create the graph
+        fig = px.line(plot_df, x='Date', y='Weight', color='Type',
+                     title='Projected Weight Loss Journey',
+                     labels={'Weight': 'Weight (kg)', 'Date': 'Date'},
+                     color_discrete_map={'Projected Weight': '#0d6efd', 'Target Weight': '#dc3545'})
+        
+        fig.update_layout(
+            hovermode='x unified',
+            plot_bgcolor='white',
+            showlegend=True,
+            legend_title_text='',
+            xaxis=dict(gridcolor='lightgray'),
+            yaxis=dict(gridcolor='lightgray')
+        )
+        
         # Display Results
         st.markdown("---")
         st.subheader("📊 Your Weight Loss Plan")
@@ -935,6 +972,9 @@ elif page == "⚖️Weight Loss Prediction":
                 label="Weeks to Goal",
                 value=f"{weeks_to_goal:.1f}"
             )
+            
+        # Display the graph
+        st.plotly_chart(fig, use_container_width=True)
         
         # Additional Information
         st.markdown("---")
