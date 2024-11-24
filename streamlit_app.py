@@ -115,8 +115,9 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         filtered_df = df.copy()
         if health_condition == "Diabetic":
             filtered_df = filtered_df[
-                (filtered_df['SugarContent'] <= 5)
-            ]
+                (filtered_df['SugarContent'] <= 5) &
+                (filtered_df['RecipeCategory'] != 'Dessert')
+    ]
         elif health_condition == "High Blood Pressure":
             filtered_df = filtered_df[
                 (filtered_df['SodiumContent'] <= 500)  # Max 500mg sodium per serving
