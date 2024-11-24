@@ -10,8 +10,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 from itertools import zip_longest
 import plotly.express as px
 import xgboost as xgb
+import datetime
 
-# Clear cache to ensure fresh data loading
 st.cache_data.clear()
 
 def load_data():
@@ -55,9 +55,8 @@ def format_recipe_instructions(instructions):
     """Format recipe instructions from c() format to numbered list."""
     if not isinstance(instructions, str):
         return []
-    # Remove c() wrapper and split by commas
+    # Clean up wrappers and ","
     instructions = instructions.replace('c(', '').replace(')', '')
-    # Split by '", ' and clean up remaining quotes
     steps = [step.strip().strip('"') for step in instructions.split('",')]
     return steps
 
@@ -67,29 +66,23 @@ def combine_ingredients(quantities, parts):
         return []
         
     try:
-        # Function to parse R-style c() format
         def parse_r_vector(text):
             if not isinstance(text, str):
                 return []
-            # Remove c() wrapper
             text = text.replace('c(', '').replace(')', '')
-            # Split by commas and clean up
             items = text.split(',')
-            # Clean each item
             cleaned = []
             for item in items:
                 item = item.strip().strip('"').strip("'")
-                if item.upper() != 'NA':  # Skip NA values
+                if item.upper() != 'NA':  
                     cleaned.append(item)
             return cleaned
 
-        # Parse quantities and parts
         quantities_list = parse_r_vector(quantities)
         parts_list = parse_r_vector(parts)
         
-        # Combine quantities and parts, but only when there's a matching part
         ingredients = []
-        for i in range(len(parts_list)):  # Iterate based on parts length
+        for i in range(len(parts_list)): 
             if i < len(quantities_list) and quantities_list[i] and quantities_list[i].upper() != 'NA':
                 ingredients.append(f"{quantities_list[i]} {parts_list[i]}".strip())
             else:
@@ -114,16 +107,15 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         input_data_reshaped = input_data.reshape(1, -1)
         input_data_scaled = models['scaler'].transform(input_data_reshaped)
         
-        # Get current parameters from session state
         wellness_goal = st.session_state.get('current_wellness_goal')
         health_condition = st.session_state.get('current_health_condition')
         user_weight = st.session_state.get('current_weight')
         
-        # First, apply health condition filtering to the entire dataset
+
         filtered_df = df.copy()
         if health_condition == "Diabetic":
             filtered_df = filtered_df[
-                (filtered_df['SugarContent'] <= 5) &  # Low sugar content
+                (filtered_df['SugarContent'] <= 5) &  
                 (filtered_df['FiberContent'] >= 3)    # Higher fiber helps manage blood sugar
             ]
         elif health_condition == "High Blood Pressure":
@@ -136,12 +128,10 @@ def recommend_food(input_data, df, models, excluded_indices=None):
                 (filtered_df['SaturatedFatContent'] <= 3)       # Low saturated fat
             ]
         
-        # If health-filtered dataset is empty, use original dataset with a warning
         if filtered_df.empty:
             st.warning(f"No foods exactly match the {health_condition} criteria. Showing best alternatives.")
             filtered_df = df.copy()
         
-        # Find cluster using filtered dataset
         cluster_label = models['kmeans'].predict(input_data_scaled)[0]
         cluster_data = filtered_df[filtered_df['Cluster'] == cluster_label].copy()
         
@@ -159,7 +149,6 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         if excluded_indices is not None:
             cluster_data = cluster_data[~cluster_data.index.isin(excluded_indices)]
             
-        # Enhanced weight loss filtering with scoring
         if wellness_goal == "Lose Weight":
             cluster_data['weight_loss_score'] = (
                 -0.4 * cluster_data['Calories'] +
@@ -174,7 +163,6 @@ def recommend_food(input_data, df, models, excluded_indices=None):
                 cluster_data['weight_loss_score'] = (cluster_data['weight_loss_score'] - min_score) / (max_score - min_score)
                 cluster_data = cluster_data.nlargest(int(len(cluster_data) * 0.5), 'weight_loss_score')
         
-        # Enhanced muscle gain filtering with scoring
         if wellness_goal == "Muscle Gain" and user_weight is not None:
             daily_protein_target = user_weight  # 1g per kg
             protein_per_meal = daily_protein_target / 3
@@ -200,7 +188,6 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         
         similarities = cosine_similarity(input_data_scaled, cluster_features_scaled).flatten()
         
-        # Adjust similarities based on health condition
         if health_condition != "No Non-Communicable Disease":
             if health_condition == "Diabetic":
                 sugar_penalty = 1 - (cluster_data['SugarContent'] / cluster_data['SugarContent'].max())
@@ -224,21 +211,17 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         if final_recommendations.empty:
             final_recommendations = cluster_data.sort_values(by='Similarity', ascending=False)
         
-        # Include ingredient columns in the result
         result = final_recommendations[['Name', 'Calories', 'ProteinContent', 'FatContent', 
                                       'CarbohydrateContent', 'SodiumContent', 'CholesterolContent', 
                                       'SaturatedFatContent', 'SugarContent', 'RecipeInstructions',
                                       'RecipeIngredientQuantities', 'RecipeIngredientParts']]
         
-        # Enhanced statistics display based on health condition and wellness goal
         if not result.empty:
-            st.write("\nRecommendation Statistics:")
+            st.write("\nRecommendation Statistics (per meal):")
             
-            # Base statistics
             st.write(f"Average Calories: {result['Calories'].head().mean():.2f} kcal")
             st.write(f"Average Protein Content: {result['ProteinContent'].head().mean():.2f}g")
             
-            # Health condition specific statistics
             if health_condition == "Diabetic":
                 st.write(f"Average Sugar Content: {result['SugarContent'].head().mean():.2f}g")
             elif health_condition == "High Blood Pressure":
@@ -247,7 +230,6 @@ def recommend_food(input_data, df, models, excluded_indices=None):
                 st.write(f"Average Cholesterol: {result['CholesterolContent'].head().mean():.2f}mg")
                 st.write(f"Average Saturated Fat: {result['SaturatedFatContent'].head().mean():.2f}g")
             
-            # Wellness goal specific statistics
             if wellness_goal == "Muscle Gain":
                 st.write(f"Target Protein per Meal: {user_weight/3:.2f}g")
             elif wellness_goal == "Lose Weight":
@@ -270,16 +252,13 @@ def create_nutrient_distribution_plot(selected_recipes):
     Returns:
     matplotlib figure
     """
-    # Nutrients to visualize
     nutrients = ['ProteinContent', 'FatContent', 'CarbohydrateContent', 
                  'SodiumContent', 'CholesterolContent', 
                  'SaturatedFatContent', 'SugarContent']
     
-    # Create a figure with subplots
     fig, axes = plt.subplots(len(nutrients), 1, figsize=(10, 4*len(nutrients)))
     fig.suptitle('Nutritional Content Distribution of Selected Recipes', fontsize=16)
     
-    # Plot distribution for each nutrient
     for i, nutrient in enumerate(nutrients):
         sns.boxplot(x=selected_recipes[nutrient], ax=axes[i])
         axes[i].set_title(f'{nutrient} Distribution')
@@ -321,7 +300,7 @@ def render_readme_page():
     st.markdown("""
     ## How to Use ❓
     
-    The app offers two powerful features:
+    The app offers 3 powerful features:
     
     ### 1 - The Star of the Show ⭐
     Recipes are recommended through advanced machine learning techniques:
@@ -333,6 +312,17 @@ def render_readme_page():
     - Search recipes using keywords like "Fish", "Chicken", "Egg", and more
     - View detailed nutritional information
     - Access calorie details for each recipe
+
+    ### 3 - Weight Loss Prediction ⚖️
+    - Taking reference from the Mifflin-St Jeor Equation, this predictor predicts the expected weightloss by activities level, gender and age.
+    - However, to achieve your weight loss goals in a safe and realistic manner:-
+            1. Combine your calorie deficit with regular physical activity
+            2. Focus on nutrient-dense, whole foods
+            3. Stay hydrated by drinking plenty of water
+            4. Get adequate sleep (7-9 hours per night)
+            5. Track your progress regularly but don't obsess over daily fluctuations
+
+    
     """)
     
     # Optional: Add a visual separator or additional guidance
@@ -808,18 +798,18 @@ elif page == "⚖️Weight Loss Prediction":
     with col2:
         st.subheader("Activity Level")
         activity_level = st.select_slider(
-            "Activity Level",
-            options=["Sedentary", "Lightly Active", "Moderately Active", "Very Active", "Extra Active"],
+            "Activity Level (per week)",
+            options=["Sedentary (Little/No Exercise)", "Lightly Active (Light exercise/sports 1-3 days/week)", "Moderately Active (Moderate exercise/sports 3-5 days/week)", "Very Active (Hard exercise/sports 6-7 days/week)", "Extra Active (Very hard exercise & physical job or training twice per day)"],
             value="Lightly Active"
         )
         
         # Activity level multipliers
         activity_multipliers = {
-            "Sedentary": 1.2,        # Little or no exercise
-            "Lightly Active": 1.375,  # Light exercise/sports 1-3 days/week
-            "Moderately Active": 1.55,# Moderate exercise/sports 3-5 days/week
-            "Very Active": 1.725,     # Hard exercise/sports 6-7 days/week
-            "Extra Active": 1.9       # Very hard exercise & physical job or training twice per day
+            "Sedentary": 1.2,        
+            "Lightly Active": 1.375,  
+            "Moderately Active": 1.55,
+            "Very Active": 1.725,     
+            "Extra Active": 1.9       
         }
         
         # Weight loss goal
@@ -846,9 +836,6 @@ elif page == "⚖️Weight Loss Prediction":
             
         # Calculate TDEE (Total Daily Energy Expenditure)
         tdee = bmr * activity_multipliers[activity_level]
-        
-        # Calculate daily calorie deficit needed for selected weekly loss
-        # 1 kg of fat = 7700 calories
         weekly_loss = goal_multipliers[weekly_goal]
         daily_deficit = (weekly_loss * 7700) / 7
         
