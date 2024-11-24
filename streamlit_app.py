@@ -797,19 +797,65 @@ elif page == "⚖️Weight Loss Prediction":
         
     with col2:
         st.subheader("Activity Level")
+        
+        # Activity level descriptions
+        activity_descriptions = {
+            "Sedentary": """
+                • Desk job with little to no exercise
+                • Mostly sitting throughout the day
+                • Less than 4,000 steps per day
+                • No structured physical activity
+            """,
+            "Lightly Active": """
+                • Light exercise 1-3 days per week
+                • Some walking (4,000-7,000 steps per day)
+                • Standing job or moving around during work
+                • Light household activities
+            """,
+            "Moderately Active": """
+                • Moderate exercise 3-5 days per week
+                • Regular walking (7,000-10,000 steps per day)
+                • Active job with consistent movement
+                • Regular household or recreational activities
+            """,
+            "Very Active": """
+                • Hard exercise 6-7 days per week
+                • Extensive walking (>10,000 steps per day)
+                • Physical labor job or intense training
+                • Competitive sports practice
+            """,
+            "Extra Active": """
+                • Professional athlete level activity
+                • Very physically demanding job
+                • Training multiple times per day
+                • Competitive sports with intense training
+            """
+        }
+        
+        # Create an expander for activity level information
+        with st.expander("ℹ️ Understanding Activity Levels"):
+            st.write("Choose your activity level based on your typical daily routine:")
+            for level, description in activity_descriptions.items():
+                st.markdown(f"**{level}**")
+                st.markdown(description)
+                st.markdown("---")
+        
         activity_level = st.select_slider(
-            "Activity Level (per week)",
-            options=["Sedentary (Little/No Exercise)", "Lightly Active (Light exercise/sports 1-3 days/week)", "Moderately Active (Moderate exercise/sports 3-5 days/week)", "Very Active (Hard exercise/sports 6-7 days/week)", "Extra Active (Very hard exercise & physical job or training twice per day)"],
+            "Activity Level",
+            options=["Sedentary", "Lightly Active", "Moderately Active", "Very Active", "Extra Active"],
             value="Lightly Active"
         )
         
+        # Show the selected activity level's description
+        st.info(f"**Selected Activity Level Details:**\n{activity_descriptions[activity_level]}")
+        
         # Activity level multipliers
         activity_multipliers = {
-            "Sedentary": 1.2,        
-            "Lightly Active": 1.375,  
-            "Moderately Active": 1.55,
-            "Very Active": 1.725,     
-            "Extra Active": 1.9       
+            "Sedentary": 1.2,        # Little or no exercise
+            "Lightly Active": 1.375,  # Light exercise/sports 1-3 days/week
+            "Moderately Active": 1.55,# Moderate exercise/sports 3-5 days/week
+            "Very Active": 1.725,     # Hard exercise/sports 6-7 days/week
+            "Extra Active": 1.9       # Very hard exercise & physical job or training twice per day
         }
         
         # Weight loss goal
