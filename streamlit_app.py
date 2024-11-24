@@ -191,7 +191,10 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         if health_condition != "No Non-Communicable Disease":
             if health_condition == "Diabetic":
                 # Exclude desserts from cluster data
-                cluster_data = cluster_data[cluster_data['RecipeCategory'] != 'Dessert']
+                cluster_data = cluster_data[
+                    (cluster_data['RecipeCategory'].str.lower() != 'dessert') &
+                    (~cluster_data['RecipeCategory'].str.contains('dessert', case=False, na=False))
+                ]
                 sugar_penalty = 1 - (cluster_data['SugarContent'] / cluster_data['SugarContent'].max())
                 similarities = similarities * (1 + sugar_penalty)
             elif health_condition == "High Blood Pressure":
