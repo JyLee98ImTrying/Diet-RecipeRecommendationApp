@@ -309,7 +309,7 @@ def create_calories_summary_plot(selected_recipes):
 
 # Sidebar for Page Navigation
 with st.sidebar.expander("Navigation", expanded=True):
-    page = st.radio("Go to:", ["ReadMe 📖", "🍅🧀MyHealthMyFood🥑🥬", "🔎Search for Recipes", "Recipe Data Visualization📊"])
+    page = st.radio("Go to:", ["ReadMe 📖", "🍅🧀MyHealthMyFood🥑🥬", "🔎Search for Recipes", "Recipe Data Visualization📊", "⚖️Weight Loss Prediction"])
 
 # Load data and models first
 df = load_data()
@@ -789,3 +789,142 @@ elif page == "Recipe Data Visualization📊":
         visualization_page(df)
     else:
         st.error("Unable to load data for visualization. Please check the data source.")
+
+# Add this new elif block after your visualization page code
+elif page == "⚖️Weight Loss Prediction":
+    st.title("⚖️Weight Loss Prediction Calculator")
+    
+    # Create two columns for input
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Personal Information")
+        gender = st.selectbox("Gender", ["Male", "Female"])
+        age = st.number_input("Age", min_value=18, max_value=100, value=30)
+        height = st.number_input("Height (cm)", min_value=120, max_value=250, value=170)
+        current_weight = st.number_input("Current Weight (kg)", min_value=40, max_value=200, value=70)
+        target_weight = st.number_input("Target Weight (kg)", min_value=40, max_value=200, value=65)
+        
+    with col2:
+        st.subheader("Activity Level")
+        activity_level = st.select_slider(
+            "Activity Level",
+            options=["Sedentary", "Lightly Active", "Moderately Active", "Very Active", "Extra Active"],
+            value="Lightly Active"
+        )
+        
+        # Activity level multipliers
+        activity_multipliers = {
+            "Sedentary": 1.2,        # Little or no exercise
+            "Lightly Active": 1.375,  # Light exercise/sports 1-3 days/week
+            "Moderately Active": 1.55,# Moderate exercise/sports 3-5 days/week
+            "Very Active": 1.725,     # Hard exercise/sports 6-7 days/week
+            "Extra Active": 1.9       # Very hard exercise & physical job or training twice per day
+        }
+        
+        # Weight loss goal
+        weekly_goal = st.select_slider(
+            "Weekly Weight Loss Goal",
+            options=["Slow (0.25kg)", "Moderate (0.5kg)", "Fast (0.75kg)", "Very Fast (1kg)"],
+            value="Moderate (0.5kg)"
+        )
+        
+        # Extract numeric value from weekly goal
+        goal_multipliers = {
+            "Slow (0.25kg)": 0.25,
+            "Moderate (0.5kg)": 0.5,
+            "Fast (0.75kg)": 0.75,
+            "Very Fast (1kg)": 1.0
+        }
+
+    if st.button("Calculate Weight Loss Prediction"):
+        # Calculate BMR using Mifflin-St Jeor Equation
+        if gender == "Male":
+            bmr = 10 * current_weight + 6.25 * height - 5 * age + 5
+        else:
+            bmr = 10 * current_weight + 6.25 * height - 5 * age - 161
+            
+        # Calculate TDEE (Total Daily Energy Expenditure)
+        tdee = bmr * activity_multipliers[activity_level]
+        
+        # Calculate daily calorie deficit needed for selected weekly loss
+        # 1 kg of fat = 7700 calories
+        weekly_loss = goal_multipliers[weekly_goal]
+        daily_deficit = (weekly_loss * 7700) / 7
+        
+        # Calculate target daily calories
+        target_calories = tdee - daily_deficit
+        
+        # Calculate time to reach goal
+        weight_to_lose = current_weight - target_weight
+        weeks_to_goal = weight_to_lose / weekly_loss
+        
+        # Calculate target date
+        target_date = datetime.datetime.now() + datetime.timedelta(weeks=weeks_to_goal)
+        
+        # Display Results
+        st.markdown("---")
+        st.subheader("📊 Your Weight Loss Prediction")
+        
+        # Create three columns for metrics
+        metric1, metric2, metric3 = st.columns(3)
+        
+        with metric1:
+            st.metric(
+                label="Daily Calories Needed",
+                value=f"{int(target_calories)} kcal",
+                delta=f"-{int(daily_deficit)} kcal"
+            )
+            
+        with metric2:
+            st.metric(
+                label="Weeks to Goal",
+                value=f"{weeks_to_goal:.1f} weeks"
+            )
+            
+        with metric3:
+            st.metric(
+                label="Target Date",
+                value=target_date.strftime("%Y-%m-%d")
+            )
+        
+        # Additional Information
+        st.markdown("---")
+        st.subheader("📋 Detailed Breakdown")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write("**Energy Expenditure**")
+            st.write(f"• Base Metabolic Rate (BMR): {int(bmr)} kcal")
+            st.write(f"• Total Daily Energy Expenditure: {int(tdee)} kcal")
+            st.write(f"• Activity Multiplier: {activity_multipliers[activity_level]:.2f}x")
+            
+        with col2:
+            st.write("**Weight Loss Plan**")
+            st.write(f"• Weekly Weight Loss Goal: {weekly_loss} kg")
+            st.write(f"• Daily Calorie Deficit: {int(daily_deficit)} kcal")
+            st.write(f"• Total Weight to Lose: {weight_to_lose:.1f} kg")
+        
+        # Health Warning
+        if target_calories < 1200 and gender == "Female" or target_calories < 1500 and gender == "Male":
+            st.warning("""
+                ⚠️ Warning: The calculated daily calories are below the recommended minimum intake. 
+                Consider adjusting your weekly weight loss goal to a more sustainable rate or 
+                consulting with a healthcare provider.
+            """)
+            
+        # Recommendations
+        st.markdown("---")
+        st.subheader("💡 Recommendations")
+        st.write("""
+            To achieve your weight loss goals safely:
+            1. Combine your calorie deficit with regular physical activity
+            2. Focus on nutrient-dense, whole foods
+            3. Stay hydrated by drinking plenty of water
+            4. Get adequate sleep (7-9 hours per night)
+            5. Track your progress regularly but don't obsess over daily fluctuations
+            
+            Remember: This is an estimate based on general calculations. Individual results may vary 
+            based on factors such as metabolism, medical conditions, and consistency with the plan.
+        """)
