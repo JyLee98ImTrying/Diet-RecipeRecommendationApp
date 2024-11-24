@@ -115,8 +115,7 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         filtered_df = df.copy()
         if health_condition == "Diabetic":
             filtered_df = filtered_df[
-                (filtered_df['SugarContent'] <= 5) &  
-                (filtered_df['FiberContent'] >= 3)    # Higher fiber helps manage blood sugar
+                (filtered_df['SugarContent'] <= 5)
             ]
         elif health_condition == "High Blood Pressure":
             filtered_df = filtered_df[
