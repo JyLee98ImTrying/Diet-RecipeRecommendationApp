@@ -780,7 +780,7 @@ elif page == "Recipe Data Visualization📊":
     else:
         st.error("Unable to load data for visualization. Please check the data source.")
 
-# Add this new elif block after your visualization page code
+#Weightloss prediction
 elif page == "⚖️Weight Loss Prediction":
     st.title("⚖️Weight Loss Prediction Calculator")
     
@@ -858,22 +858,42 @@ elif page == "⚖️Weight Loss Prediction":
             "Extra Active": 1.9       # Very hard exercise & physical job or training twice per day
         }
         
-        # Weight loss goal
-        weekly_goal = st.select_slider(
-            "Weekly Weight Loss Goal",
-            options=["Slow (0.25kg)", "Moderate (0.5kg)", "Fast (0.75kg)", "Very Fast (1kg)"],
-            value="Moderate (0.5kg)"
+        # Target date selection
+        min_date = datetime.datetime.now().date()
+        max_date = min_date + datetime.timedelta(days=365)  # Maximum 1 year from now
+        target_date = st.date_input(
+            "Select Target Date",
+            value=min_date + datetime.timedelta(weeks=12),  # Default to 12 weeks from now
+            min_value=min_date,
+            max_value=max_date,
+            help="Choose a target date within the next year"
         )
-        
-        # Extract numeric value from weekly goal
-        goal_multipliers = {
-            "Slow (0.25kg)": 0.25,
-            "Moderate (0.5kg)": 0.5,
-            "Fast (0.75kg)": 0.75,
-            "Very Fast (1kg)": 1.0
-        }
 
-    if st.button("Calculate Weight Loss Prediction"):
+    if st.button("Calculate Weight Loss Plan"):
+        # Calculate time until target date
+        days_to_goal = (target_date - datetime.datetime.now().date()).days
+        weeks_to_goal = days_to_goal / 7
+        
+        # Calculate total weight to lose
+        weight_to_lose = current_weight - target_weight
+        
+        # Calculate required weekly weight loss rate
+        if weeks_to_goal > 0:
+            required_weekly_loss = weight_to_lose / weeks_to_goal
+        else:
+            st.error("Please select a future date for your weight loss goal.")
+            st.stop()
+            
+        # Check if the required rate is safe (maximum 1kg per week)
+        if required_weekly_loss > 1:
+            st.warning(f"""
+                ⚠️ Warning: Your goal requires losing {required_weekly_loss:.2f}kg per week, which exceeds
+                the recommended safe rate of 1kg per week. Consider:
+                1. Choosing a later target date
+                2. Setting a more modest weight loss goal
+                3. Consulting with a healthcare provider
+            """)
+            
         # Calculate BMR using Mifflin-St Jeor Equation
         if gender == "Male":
             bmr = 10 * current_weight + 6.25 * height - 5 * age + 5
@@ -882,22 +902,17 @@ elif page == "⚖️Weight Loss Prediction":
             
         # Calculate TDEE (Total Daily Energy Expenditure)
         tdee = bmr * activity_multipliers[activity_level]
-        weekly_loss = goal_multipliers[weekly_goal]
-        daily_deficit = (weekly_loss * 7700) / 7
+        
+        # Calculate daily calorie deficit needed for required weekly loss
+        # 1 kg of fat = 7700 calories
+        daily_deficit = (required_weekly_loss * 7700) / 7
         
         # Calculate target daily calories
         target_calories = tdee - daily_deficit
         
-        # Calculate time to reach goal
-        weight_to_lose = current_weight - target_weight
-        weeks_to_goal = weight_to_lose / weekly_loss
-        
-        # Calculate target date
-        target_date = datetime.datetime.now() + datetime.timedelta(weeks=weeks_to_goal)
-        
         # Display Results
         st.markdown("---")
-        st.subheader("📊 Your Weight Loss Prediction")
+        st.subheader("📊 Your Weight Loss Plan")
         
         # Create three columns for metrics
         metric1, metric2, metric3 = st.columns(3)
@@ -911,14 +926,14 @@ elif page == "⚖️Weight Loss Prediction":
             
         with metric2:
             st.metric(
-                label="Weeks to Goal",
-                value=f"{weeks_to_goal:.1f} weeks"
+                label="Required Weekly Loss",
+                value=f"{required_weekly_loss:.2f} kg"
             )
             
         with metric3:
             st.metric(
-                label="Target Date",
-                value=target_date.strftime("%Y-%m-%d")
+                label="Weeks to Goal",
+                value=f"{weeks_to_goal:.1f}"
             )
         
         # Additional Information
@@ -935,16 +950,18 @@ elif page == "⚖️Weight Loss Prediction":
             
         with col2:
             st.write("**Weight Loss Plan**")
-            st.write(f"• Weekly Weight Loss Goal: {weekly_loss} kg")
-            st.write(f"• Daily Calorie Deficit: {int(daily_deficit)} kcal")
             st.write(f"• Total Weight to Lose: {weight_to_lose:.1f} kg")
+            st.write(f"• Days to Goal: {days_to_goal} days")
+            st.write(f"• Daily Calorie Deficit: {int(daily_deficit)} kcal")
         
         # Health Warning
         if target_calories < 1200 and gender == "Female" or target_calories < 1500 and gender == "Male":
             st.warning("""
                 ⚠️ Warning: The calculated daily calories are below the recommended minimum intake. 
-                Consider adjusting your weekly weight loss goal to a more sustainable rate or 
-                consulting with a healthcare provider.
+                Consider:
+                1. Choosing a later target date
+                2. Setting a more modest weight loss goal
+                3. Consulting with a healthcare provider
             """)
             
         # Recommendations
