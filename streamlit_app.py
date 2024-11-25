@@ -395,121 +395,15 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         steps = [step.strip().strip('"') for step in instructions.split('",')]
         return steps
     
-    def display_recommendations_with_selection(recommendations, key_prefix=''):
-        """
-        Display recommendations with checkboxes for selection with enhanced key management
-        
-        Parameters:
-        recommendations (pd.DataFrame): DataFrame of recipe recommendations
-        key_prefix (str): Unique prefix for checkbox keys to avoid collision
-        
-        Returns:
-        pd.DataFrame: Selected recipes
-        """
-        if 'current_recommendations' not in st.session_state:
-            st.session_state.current_recommendations = None
-
-        if 'expander_states' not in st.session_state:
-            st.session_state.expander_states = {}
-    
-        # Store or retrieve recommendations
-        if recommendations is not None and not recommendations.empty:
-            st.session_state.current_recommendations = recommendations
-        else:
-            recommendations = st.session_state.current_recommendations
-        
-        if recommendations is not None and not recommendations.empty:
-            st.write("### 🍳 Recommended Food Items (Single Serving)")
-                
-            # Create a container to hold selections
-            selection_container = st.container()
-            
-            with selection_container:
-                selected_recipes = []
-                for idx, row in recommendations.iterrows():
-                    unique_key = f'recipe_select_{key_prefix}_{idx}'
-
-                    is_expanded = st.session_state.expander_states.get(expander_key, False)
-                    
-                    with st.expander(f"📗 {row['Name']}", expanded=is_expanded):
-                        st.session_state.expander_states[expander_key] = True
-                        
-                        is_selected = st.checkbox(
-                            "Select this recipe",
-                            key=unique_key,
-                            value=idx in st.session_state.get('selected_recipe_indices', set())
-                        )
-                        
-                        # Update selection state
-                        if 'selected_recipe_indices' not in st.session_state:
-                            st.session_state.selected_recipe_indices = set()
-                        
-                        if is_selected:
-                            st.session_state.selected_recipe_indices.add(idx)
-                            selected_recipes.append(row)
-                        else:
-                            st.session_state.selected_recipe_indices.discard(idx)
-                        
-                        # Display recipe details
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            st.write("**📊 Nutritional Information**")
-                            st.write(f"• Calories: {row['Calories']:.1f}")
-                            st.write(f"• Protein: {row['ProteinContent']:.1f}g")
-                            st.write(f"• Fat: {row['FatContent']:.1f}g")
-                            st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
-                        
-                        with col2:
-                            st.write("**🔍 Additional Details**")
-                            st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
-                            st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
-                            st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
-                            st.write(f"• Sugar: {row['SugarContent']:.1f}g")
-                        
-                        # Ingredients section
-                        st.write("**🥗 Ingredients**")
-                        ingredients = combine_ingredients(
-                            row.get('RecipeIngredientQuantities', ''), 
-                            row.get('RecipeIngredientParts', '')
-                        )
-                        if ingredients:
-                            for ingredient in ingredients:
-                                st.write(f"• {ingredient}")
-                        else:
-                            st.write("No ingredient information available")
-                        
-                        # Recipe Instructions
-                        st.write("**👩‍🍳 Recipe Instructions**")
-                        instructions = format_recipe_instructions(row['RecipeInstructions'])
-                        for i, step in enumerate(instructions, 1):
-                            st.write(f"{i}. {step}")
-    
-                    # Update expander state when it's closed
-                    if not st.session_state.expander_states.get(expander_key):
-                        st.session_state.expander_states[expander_key] = False
-            
-            # Prepare selected recipes
-            if selected_recipes:
-                st.write("### 🍽️ Selected Recipes")
-                selected_df = pd.DataFrame(selected_recipes)
-                for name in selected_df['Name']:
-                    st.write(f"• {name}")
-                
-                if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
-                    st.write("### 🍽️ Nutritional Content Distribution")
-                    fig1 = create_nutrient_distribution_plot(selected_df)
-                    st.pyplot(fig1)
-                    
-                    st.write("### 🔢 Calories Breakdown")
-                    fig2 = create_calories_summary_plot(selected_df)
-                    st.pyplot(fig2)
-        
-            return recommendations
-        else:
-            if not st.session_state.get('current_recommendations'):
-                st.warning("No recommendations found. Please try different inputs.")
-            return pd.DataFrame()
+    File "/home/adminuser/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 88, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+File "/home/adminuser/venv/lib/python3.12/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 579, in code_to_exec
+    exec(code, module.__dict__)
+File "/mount/src/diet-reciperecommendationapp/streamlit_app.py", line 552, in <module>
+    display_recommendations_with_selection(recommendations.head(5))
+File "/mount/src/diet-reciperecommendationapp/streamlit_app.py", line 432, in display_recommendations_with_selection
+    is_expanded = st.session_state.expander_states.get(expander_key, False)
 
     
     if st.button("Get Recommendations"):
