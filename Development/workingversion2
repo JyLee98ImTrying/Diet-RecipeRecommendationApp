@@ -394,10 +394,10 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         # Split by '", ' and clean up remaining quotes
         steps = [step.strip().strip('"') for step in instructions.split('",')]
         return steps
-    
+
     def display_recommendations_with_selection(recommendations, key_prefix=''):
         """
-        Display recommendations with checkboxes for selection with enhanced key management
+        Display recommendations with checkboxes next to expander headers
         
         Parameters:
         recommendations (pd.DataFrame): DataFrame of recipe recommendations
@@ -406,37 +406,42 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         Returns:
         pd.DataFrame: Selected recipes
         """
+        # Initialize session state for selections and recommendations
         if 'current_recommendations' not in st.session_state:
             st.session_state.current_recommendations = None
+        
+        if 'selected_recipe_indices' not in st.session_state:
+            st.session_state.selected_recipe_indices = set()
     
-        # Store or retrieve recommendations
+        # Store new recommendations only if they are provided
         if recommendations is not None and not recommendations.empty:
             st.session_state.current_recommendations = recommendations
-        else:
-            recommendations = st.session_state.current_recommendations
-    
-        if recommendations is not None and not recommendations.empty:
+        
+        # Always use recommendations from session state
+        current_recommendations = st.session_state.current_recommendations
+        
+        if current_recommendations is not None and not current_recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
                 
-            # Create a container to hold selections
-            selection_container = st.container()
-            
-            with selection_container:
-                selected_recipes = []
-                for idx, row in recommendations.iterrows():
-                    unique_key = f'recipe_select_{key_prefix}_{idx}'
-                    
+            selected_recipes = []
+            for idx, row in current_recommendations.iterrows():
+                unique_key = f'recipe_select_{key_prefix}_{idx}'
+                
+                # Create columns for checkbox and expander
+                col1, col2 = st.columns([1, 11])
+                
+                # Checkbox in first column
+                with col1:
+                    is_selected = st.checkbox(
+                        "",  # Empty label as we're putting it next to the expander
+                        key=unique_key,
+                        value=idx in st.session_state.selected_recipe_indices
+                    )
+                
+                # Expander in second column
+                with col2:
                     with st.expander(f"📗 {row['Name']}"):
-                        is_selected = st.checkbox(
-                            "Select this recipe",
-                            key=unique_key,
-                            value=idx in st.session_state.get('selected_recipe_indices', set())
-                        )
-                        
                         # Update selection state
-                        if 'selected_recipe_indices' not in st.session_state:
-                            st.session_state.selected_recipe_indices = set()
-                        
                         if is_selected:
                             st.session_state.selected_recipe_indices.add(idx)
                             selected_recipes.append(row)
@@ -494,13 +499,12 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                     fig2 = create_calories_summary_plot(selected_df)
                     st.pyplot(fig2)
         
-            return recommendations
+            return current_recommendations
         else:
             if not st.session_state.get('current_recommendations'):
                 st.warning("No recommendations found. Please try different inputs.")
             return pd.DataFrame()
-
-    
+            
     if st.button("Get Recommendations"):
         daily_calories = calculate_caloric_needs(gender, weight, height, age)
         protein_grams = 0.8 * weight
