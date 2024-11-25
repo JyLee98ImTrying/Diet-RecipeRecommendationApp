@@ -560,11 +560,11 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             ]
             
             if not remaining_recommendations.empty:
-            display_recommendations_with_selection(remaining_recommendations.head(5))
+                display_recommendations_with_selection(remaining_recommendations.head(5))
+            else:
+                st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
         else:
-            st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
-    else:
-        st.warning("Please get initial recommendations first.")
+            st.warning("Please get initial recommendations first.")
         
 #Weightloss prediction
 elif page == "⚖️Weight Loss Prediction":
