@@ -408,7 +408,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         """
         if 'current_recommendations' not in st.session_state:
             st.session_state.current_recommendations = None
-
+    
         # Store or retrieve recommendations
         if recommendations is not None and not recommendations.empty:
             st.session_state.current_recommendations = recommendations
@@ -417,12 +417,12 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
     
         if recommendations is not None and not recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
-            
+                
             # Create a container to hold selections
             selection_container = st.container()
-            selected_recipes = []
             
             with selection_container:
+                selected_recipes = []
                 for idx, row in recommendations.iterrows():
                     unique_key = f'recipe_select_{key_prefix}_{idx}'
                     
@@ -493,101 +493,74 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                     st.write("### 🔢 Calories Breakdown")
                     fig2 = create_calories_summary_plot(selected_df)
                     st.pyplot(fig2)
-            
+        
             return recommendations
         else:
             if not st.session_state.get('current_recommendations'):
                 st.warning("No recommendations found. Please try different inputs.")
             return pd.DataFrame()
 
-def initialize_session_state():
-    """Initialize session state variables"""
-    if 'previous_recommendations' not in st.session_state:
-        st.session_state.previous_recommendations = set()
-    if 'all_recommendations_cache' not in st.session_state:
-        st.session_state.all_recommendations_cache = None
-    if 'current_recommendations' not in st.session_state:
-        st.session_state.current_recommendations = None
-
-def main():
-    st.title("Recipe Recommendations")
     
-    # Initialize session state
-    initialize_session_state()
-    
-    # Input fields
-    st.subheader("Enter Your Information")
-    gender = st.selectbox("Gender", ["Male", "Female"])
-    weight = st.number_input("Weight (kg)", min_value=30.0, max_value=200.0, value=70.0)
-    height = st.number_input("Height (cm)", min_value=100.0, max_value=250.0, value=170.0)
-    age = st.number_input("Age", min_value=1, max_value=120, value=30)
-    wellness_goal = st.selectbox("Wellness Goal", ["Weight Loss", "Maintenance", "Muscle Gain"])
-    health_condition = st.multiselect("Health Conditions", ["None", "Diabetes", "Hypertension", "Heart Disease"])
-
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Get Recommendations"):
-            daily_calories = calculate_caloric_needs(gender, weight, height, age)
-            protein_grams = 0.8 * weight
-            fat_calories = 0.25 * daily_calories
-            carb_calories = 0.55 * daily_calories
-            fat_grams = fat_calories / 9
-            carb_grams = carb_calories / 4
-            meal_fraction = 0.3
-            
-            input_features = np.array([
-                daily_calories * meal_fraction,
-                protein_grams * meal_fraction,
-                fat_grams * meal_fraction,
-                carb_grams * meal_fraction,
-                2000 * meal_fraction,
-                200 * meal_fraction,
-                (fat_grams * 0.01) * meal_fraction,
-                (carb_grams * 0.03) * meal_fraction,
-                (carb_grams * 0.01) * meal_fraction
-            ]).reshape(1, -1)
-                    
-            # Store in session state
-            st.session_state.current_input_features = input_features
-            st.session_state.current_wellness_goal = wellness_goal
-            st.session_state.current_weight = weight
-            st.session_state.current_health_condition = health_condition
-            
-            # Get initial recommendations
-            recommendations = recommend_food(input_features, df, models)
-            
-            # Store all recommendations in cache for reshuffling
-            if not recommendations.empty:
-                st.session_state.all_recommendations_cache = recommendations
-                st.session_state.previous_recommendations.update(recommendations.index[:5].tolist())
-                # Display only top 5 recommendations
-                display_recommendations_with_selection(recommendations.head(5))
-            else:
-                st.warning("No recommendations found. Please try different inputs.")
-
-    with col2:
-        # Reshuffle button section
-        if st.button("Reshuffle Recommendations"):
-            if st.session_state.all_recommendations_cache is not None:
-                # Get all recommendations excluding previously shown ones
-                remaining_recommendations = st.session_state.all_recommendations_cache[
-                    ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
-                ]
+    if st.button("Get Recommendations"):
+        daily_calories = calculate_caloric_needs(gender, weight, height, age)
+        protein_grams = 0.8 * weight
+        fat_calories = 0.25 * daily_calories
+        carb_calories = 0.55 * daily_calories
+        fat_grams = fat_calories / 9
+        carb_grams = carb_calories / 4
+        meal_fraction = 0.3
+        
+        input_features = np.array([
+            daily_calories * meal_fraction,
+            protein_grams * meal_fraction,
+            fat_grams * meal_fraction,
+            carb_grams * meal_fraction,
+            2000 * meal_fraction,
+            200 * meal_fraction,
+            (fat_grams * 0.01) * meal_fraction,
+            (carb_grams * 0.03) * meal_fraction,
+            (carb_grams * 0.01) * meal_fraction
+        ]).reshape(1, -1)
                 
-                if not remaining_recommendations.empty:
-                    # Get next 5 recommendations
-                    new_recommendations = remaining_recommendations.head(5)
-                    # Update shown recommendations
-                    st.session_state.previous_recommendations.update(new_recommendations.index.tolist())
-                    # Display new recommendations
-                    display_recommendations_with_selection(new_recommendations)
-                else:
-                    st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
+        # Store in session state
+        st.session_state.current_input_features = input_features
+        st.session_state.current_wellness_goal = wellness_goal
+        st.session_state.current_weight = weight
+        st.session_state.current_health_condition = health_condition
+    
+        
+        # Get initial recommendations
+        recommendations = recommend_food(input_features, df, models)
+        
+        # Store all recommendations in cache for reshuffling
+        if not recommendations.empty:
+            st.session_state.all_recommendations_cache = recommendations
+            # Store the indices of shown recommendations
+            st.session_state.previous_recommendations.update(recommendations.index[:5].tolist())
+            # Display only top 5 recommendations
+            display_recommendations_with_selection(recommendations.head(5))
+        else:
+            st.warning("No recommendations found. Please try different inputs.")
+    
+    # Update the reshuffle button section similarly:
+    if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'all_recommendations_cache'):
+        if st.session_state.all_recommendations_cache is not None:
+            # Get all recommendations excluding previously shown ones
+            remaining_recommendations = st.session_state.all_recommendations_cache[
+                ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
+            ]
+            
+            if not remaining_recommendations.empty:
+                # Get next 5 recommendations
+                new_recommendations = remaining_recommendations.head(5)
+                # Update shown recommendations
+                st.session_state.previous_recommendations.update(new_recommendations.index.tolist())
+                # Display new recommendations
+                display_recommendations_with_selection(new_recommendations)
             else:
-                st.warning("Please get initial recommendations first.")
-
-if __name__ == "__main__":
-    main()
+                st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
+        else:
+            st.warning("Please get initial recommendations first.")
 
 #Weightloss prediction
 elif page == "⚖️Weight Loss Prediction":
