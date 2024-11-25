@@ -395,85 +395,77 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         steps = [step.strip().strip('"') for step in instructions.split('",')]
         return steps
 
-    def display_recommendations_with_selection(recommendations=None, key_prefix=''):
+    def display_recommendations_with_selection(recommendations, key_prefix=''):
         """
-        Display recommendations with checkboxes for selection while maintaining state
-        """
-        # Ensure all_data is initialized in session state
-        if not hasattr(st.session_state, 'all_data'):
-            st.session_state.all_data = {
-                'recommendations': None,
-                'selected_indices': set(),
-                'displayed_recommendations': None
-            }
-
-        if (recommendations is not None and 
-            not recommendations.empty and 
-            st.session_state.all_data['displayed_recommendations'] is None):
-            st.session_state.all_data['recommendations'] = recommendations
-            st.session_state.all_data['displayed_recommendations'] = recommendations.copy()
+        Display recommendations with checkboxes next to expander headers
         
-        # Get current recommendations from session state
-        current_recommendations = st.session_state.all_data.get('displayed_recommendations')
+        Parameters:
+        recommendations (pd.DataFrame): DataFrame of recipe recommendations
+        key_prefix (str): Unique prefix for checkbox keys to avoid collision
+        
+        Returns:
+        pd.DataFrame: Selected recipes
+        """
+        # Initialize session state for selections and recommendations
+        if 'current_recommendations' not in st.session_state:
+            st.session_state.current_recommendations = None
+        
+        if 'selected_recipe_indices' not in st.session_state:
+            st.session_state.selected_recipe_indices = set()
+    
+        # Store new recommendations only if they are provided
+        if recommendations is not None and not recommendations.empty:
+            st.session_state.current_recommendations = recommendations
+        
+        # Always use recommendations from session state
+        current_recommendations = st.session_state.current_recommendations
         
         if current_recommendations is not None and not current_recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
-            selections_container = st.container()
-            
+                
             selected_recipes = []
-            
-            # Create columns for all recipes first
             for idx, row in current_recommendations.iterrows():
-                checkbox_col, expander_col = st.columns([1, 15])
+                unique_key = f'recipe_select_{key_prefix}_{idx}'
                 
-                with checkbox_col:
-                    # Create a unique key for each checkbox
-                    checkbox_key = f'select_{key_prefix}_{idx}'
-                    
-                    # Ensure the checkbox state exists in session state
-                    if 'selected_checkboxes' not in st.session_state:
-                        st.session_state.selected_checkboxes = {}
-                    
-                    # Initialize checkbox state if not exists
-                    if checkbox_key not in st.session_state.selected_checkboxes:
-                        st.session_state.selected_checkboxes[checkbox_key] = idx in st.session_state.all_data['selected_indices']
-                        
-                    # Use the checkbox with session state
+                # Create columns for checkbox and expander
+                col1, col2 = st.columns([1, 11])
+                
+                # Checkbox in first column
+                with col1:
                     is_selected = st.checkbox(
-                        "Select recipe",  # Non-empty label
-                        key=checkbox_key,
-                        value=st.session_state.selected_checkboxes[checkbox_key],
-                        label_visibility='hidden'  # Hide the label
+                        "",  # Empty label as we're putting it next to the expander
+                        key=unique_key,
+                        value=idx in st.session_state.selected_recipe_indices
                     )
-                    
-                # Update selection state
-                if is_selected:
-                    st.session_state.all_data['selected_indices'].add(idx)
-                    st.session_state.selected_checkboxes[checkbox_key] = True
-                    selected_recipes.append(row)
-                else:
-                    st.session_state.all_data['selected_indices'].discard(idx)
-                    st.session_state.selected_checkboxes[checkbox_key] = False
                 
-                # Rest of your expander code remains the same
-                with expander_col:
+                # Expander in second column
+                with col2:
                     with st.expander(f"📗 {row['Name']}"):
-                        detail_col1, detail_col2 = st.columns(2)
+                        # Update selection state
+                        if is_selected:
+                            st.session_state.selected_recipe_indices.add(idx)
+                            selected_recipes.append(row)
+                        else:
+                            st.session_state.selected_recipe_indices.discard(idx)
                         
-                        with detail_col1:
+                        # Display recipe details
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
                             st.write("**📊 Nutritional Information**")
                             st.write(f"• Calories: {row['Calories']:.1f}")
                             st.write(f"• Protein: {row['ProteinContent']:.1f}g")
                             st.write(f"• Fat: {row['FatContent']:.1f}g")
                             st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
                         
-                        with detail_col2:
+                        with col2:
                             st.write("**🔍 Additional Details**")
                             st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
                             st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
                             st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
                             st.write(f"• Sugar: {row['SugarContent']:.1f}g")
                         
+                        # Ingredients section
                         st.write("**🥗 Ingredients**")
                         ingredients = combine_ingredients(
                             row.get('RecipeIngredientQuantities', ''), 
@@ -485,58 +477,35 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                         else:
                             st.write("No ingredient information available")
                         
+                        # Recipe Instructions
                         st.write("**👩‍🍳 Recipe Instructions**")
                         instructions = format_recipe_instructions(row['RecipeInstructions'])
                         for i, step in enumerate(instructions, 1):
                             st.write(f"{i}. {step}")
             
-            # Display selected recipes summary in the container
-            with selections_container:
-                if selected_recipes:
-                    st.write("### 🍽️ Selected Recipes")
-                    selected_df = pd.DataFrame(selected_recipes)
-                    for name in selected_df['Name']:
-                        st.write(f"• {name}")
+            # Prepare selected recipes
+            if selected_recipes:
+                st.write("### 🍽️ Selected Recipes")
+                selected_df = pd.DataFrame(selected_recipes)
+                for name in selected_df['Name']:
+                    st.write(f"• {name}")
+                
+                if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
+                    st.write("### 🍽️ Nutritional Content Distribution")
+                    fig1 = create_nutrient_distribution_plot(selected_df)
+                    st.pyplot(fig1)
                     
-                    viz_key = f'{key_prefix}_visualize'
-                    if 'visualization_states' not in st.session_state:
-                        st.session_state.visualization_states = {}
-                    
-                    if viz_key not in st.session_state.visualization_states:
-                        st.session_state.visualization_states[viz_key] = False
-                    
-                    if st.button("Visualize Selected Recipes", key=viz_key):
-                        st.session_state.visualization_states[viz_key] = not st.session_state.visualization_states[viz_key]
-                    
-                    if st.session_state.visualization_states[viz_key]:
-                        st.write("### 🍽️ Nutritional Content Distribution")
-                        fig1 = create_nutrient_distribution_plot(selected_df)
-                        st.pyplot(fig1)
-                        
-                        st.write("### 🔢 Calories Breakdown")
-                        fig2 = create_calories_summary_plot(selected_df)
-                        st.pyplot(fig2)
-            
+                    st.write("### 🔢 Calories Breakdown")
+                    fig2 = create_calories_summary_plot(selected_df)
+                    st.pyplot(fig2)
+        
             return current_recommendations
         else:
-            st.warning("No recommendations found. Please try different inputs.")
+            if not st.session_state.get('current_recommendations'):
+                st.warning("No recommendations found. Please try different inputs.")
             return pd.DataFrame()
-    
-    # Modify your Get Recommendations button code to:
+            
     if st.button("Get Recommendations"):
-        # Ensure session state is properly initialized
-        if not hasattr(st.session_state, 'all_data'):
-            st.session_state.all_data = {
-                'recommendations': None,
-                'selected_indices': set(),
-                'displayed_recommendations': None
-            }
-        
-        # Clear existing recommendations first
-        st.session_state.all_data['displayed_recommendations'] = None
-        st.session_state.all_data['selected_indices'] = set()
-        st.session_state.selected_checkboxes = {}
-        
         daily_calories = calculate_caloric_needs(gender, weight, height, age)
         protein_grams = 0.8 * weight
         fat_calories = 0.25 * daily_calories
@@ -556,34 +525,42 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             (carb_grams * 0.03) * meal_fraction,
             (carb_grams * 0.01) * meal_fraction
         ]).reshape(1, -1)
-        
-        recommendations = recommend_food(input_features, df, models)
+                
+        # Store in session state
+        st.session_state.current_input_features = input_features
+        st.session_state.current_wellness_goal = wellness_goal
+        st.session_state.current_weight = weight
+        st.session_state.current_health_condition = health_condition
     
+        
+        # Get initial recommendations
+        recommendations = recommend_food(input_features, df, models)
+        
+        # Store all recommendations in cache for reshuffling
         if not recommendations.empty:
+            st.session_state.all_recommendations_cache = recommendations
+            # Store the indices of shown recommendations
+            st.session_state.previous_recommendations.update(recommendations.index[:5].tolist())
+            # Display only top 5 recommendations
             display_recommendations_with_selection(recommendations.head(5))
         else:
             st.warning("No recommendations found. Please try different inputs.")
     
-    # And modify your Reshuffle button code to:
-    if st.button("Reshuffle Recommendations"):
-       if not hasattr(st.session_state, 'all_data'):
-        st.session_state.all_data = {
-            'recommendations': None,
-            'selected_indices': set(),
-            'displayed_recommendations': None
-        }
-    
-        if st.session_state.all_data.get('recommendations') is not None:
-            st.session_state.all_data['displayed_recommendations'] = None
-            st.session_state.all_data['selected_indices'] = set()
-            st.session_state.selected_checkboxes = {}
-            used_indices = st.session_state.previous_recommendations
-            remaining_recommendations = st.session_state.all_data['recommendations'][
-                ~st.session_state.all_data['recommendations'].index.isin(used_indices)
+    # Update the reshuffle button section similarly:
+    if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'all_recommendations_cache'):
+        if st.session_state.all_recommendations_cache is not None:
+            # Get all recommendations excluding previously shown ones
+            remaining_recommendations = st.session_state.all_recommendations_cache[
+                ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
             ]
             
             if not remaining_recommendations.empty:
-                display_recommendations_with_selection(remaining_recommendations.head(5))
+                # Get next 5 recommendations
+                new_recommendations = remaining_recommendations.head(5)
+                # Update shown recommendations
+                st.session_state.previous_recommendations.update(new_recommendations.index.tolist())
+                # Display new recommendations
+                display_recommendations_with_selection(new_recommendations)
             else:
                 st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
         else:
