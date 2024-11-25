@@ -114,9 +114,11 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         
         filtered_df = df.copy()
         if health_condition == "Diabetic":
+            # Enhanced dessert filtering
             filtered_df = filtered_df[
                 (filtered_df['SugarContent'] <= 2) &
-                (filtered_df['RecipeCategory'] != 'Dessert')
+                (~filtered_df['RecipeCategory'].str.lower().str.contains('dessert', na=False)) &
+                (~filtered_df['Name'].str.lower().str.contains('cake|cookie|pie|ice cream|pudding|sweet|chocolate', na=False))
             ]
         elif health_condition == "High Blood Pressure":
             filtered_df = filtered_df[
@@ -127,6 +129,10 @@ def recommend_food(input_data, df, models, excluded_indices=None):
                 (filtered_df['CholesterolContent'] <= 50) &     # Low cholesterol
                 (filtered_df['SaturatedFatContent'] <= 3)       # Low saturated fat
             ]
+        
+        # Log filtering results for debugging
+        if health_condition == "Diabetic":
+            st.write(f"Number of recipes after diabetic filtering: {len(filtered_df)}")
         
         if filtered_df.empty:
             st.warning(f"No foods exactly match the {health_condition} criteria. Showing best alternatives.")
@@ -148,6 +154,12 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         
         if excluded_indices is not None:
             cluster_data = cluster_data[~cluster_data.index.isin(excluded_indices)]
+        
+        # Additional safety check for diabetic condition
+        if health_condition == "Diabetic":
+            cluster_data = cluster_data[
+                ~cluster_data['Name'].str.lower().str.contains('cake|cookie|pie|ice cream|pudding|sweet|chocolate', na=False)
+            ]
             
         if wellness_goal == "Lose Weight":
             cluster_data['weight_loss_score'] = (
