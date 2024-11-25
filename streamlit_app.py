@@ -558,10 +558,10 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                         st.pyplot(fig2)
             
                 return recommendations
-            else:
-                if not st.session_state.get('current_recommendations'):
-                    st.warning("No recommendations found. Please try different inputs.")
-                return pd.DataFrame()
+                else:
+                    if not st.session_state.get('current_recommendations'):
+                        st.warning("No recommendations found. Please try different inputs.")
+                    return pd.DataFrame()
 
     
     
