@@ -414,7 +414,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             st.session_state.all_data['displayed_recommendations'] = recommendations.copy()
         
         # Get current recommendations from session state
-         current_recommendations = st.session_state.all_data.get('displayed_recommendations')
+        current_recommendations = st.session_state.all_data.get('displayed_recommendations')
         
         if current_recommendations is not None and not current_recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
