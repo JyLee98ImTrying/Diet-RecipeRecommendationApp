@@ -406,16 +406,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 'selected_indices': set(),
                 'displayed_recommendations': None
             }
-        
-        # Ensure each key exists in all_data
-        if 'recommendations' not in st.session_state.all_data:
-            st.session_state.all_data['recommendations'] = None
-        if 'selected_indices' not in st.session_state.all_data:
-            st.session_state.all_data['selected_indices'] = set()
-        if 'displayed_recommendations' not in st.session_state.all_data:
-            st.session_state.all_data['displayed_recommendations'] = None
-        
-        # Update recommendations only if new ones are provided AND we don't already have displayed recommendations
+
         if (recommendations is not None and 
             not recommendations.empty and 
             st.session_state.all_data['displayed_recommendations'] is None):
@@ -423,12 +414,10 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             st.session_state.all_data['displayed_recommendations'] = recommendations.copy()
         
         # Get current recommendations from session state
-        current_recommendations = st.session_state.all_data.get('displayed_recommendations')
+         current_recommendations = st.session_state.all_data.get('displayed_recommendations')
         
         if current_recommendations is not None and not current_recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
-            
-            # Create a container for selections to avoid layout shifts
             selections_container = st.container()
             
             selected_recipes = []
@@ -437,7 +426,6 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             for idx, row in current_recommendations.iterrows():
                 checkbox_col, expander_col = st.columns([1, 15])
                 
-                # Checkbox in first column
                 with checkbox_col:
                     # Create a unique key for each checkbox
                     checkbox_key = f'select_{key_prefix}_{idx}'
@@ -449,14 +437,15 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                     # Initialize checkbox state if not exists
                     if checkbox_key not in st.session_state.selected_checkboxes:
                         st.session_state.selected_checkboxes[checkbox_key] = idx in st.session_state.all_data['selected_indices']
-                    
+                        
                     # Use the checkbox with session state
                     is_selected = st.checkbox(
-                        "",
+                        "Select recipe",  # Non-empty label
                         key=checkbox_key,
-                        value=st.session_state.selected_checkboxes[checkbox_key]
+                        value=st.session_state.selected_checkboxes[checkbox_key],
+                        label_visibility='hidden'  # Hide the label
                     )
-                
+                    
                 # Update selection state
                 if is_selected:
                     st.session_state.all_data['selected_indices'].add(idx)
