@@ -118,7 +118,7 @@ def recommend_food(input_data, df, models, excluded_indices=None):
             filtered_df = filtered_df[
                 (filtered_df['SugarContent'] <= 2) &
                 (~filtered_df['RecipeCategory'].str.lower().str.contains('dessert', na=False)) &
-                (~filtered_df['Name'].str.lower().str.contains('cake|cookie|pie|ice cream|pudding|sweet|chocolate|scones|bread|biscuits', na=False))
+                (~filtered_df['Name'].str.lower().str.contains('cake|cookie|pie|ice cream|pudding|sweet|chocolate|scones|bread|biscuits|caramel|rolls|bars', na=False))
             ]
         elif health_condition == "High Blood Pressure":
             filtered_df = filtered_df[
