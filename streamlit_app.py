@@ -399,13 +399,21 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         """
         Display recommendations with checkboxes for selection while maintaining state
         """
-        # Initialize session state for all data if not exists
-        if 'all_data' not in st.session_state:
+        # Ensure all_data is initialized in session state
+        if not hasattr(st.session_state, 'all_data'):
             st.session_state.all_data = {
                 'recommendations': None,
                 'selected_indices': set(),
                 'displayed_recommendations': None
             }
+        
+        # Ensure each key exists in all_data
+        if 'recommendations' not in st.session_state.all_data:
+            st.session_state.all_data['recommendations'] = None
+        if 'selected_indices' not in st.session_state.all_data:
+            st.session_state.all_data['selected_indices'] = set()
+        if 'displayed_recommendations' not in st.session_state.all_data:
+            st.session_state.all_data['displayed_recommendations'] = None
         
         # Update recommendations only if new ones are provided AND we don't already have displayed recommendations
         if (recommendations is not None and 
@@ -434,23 +442,29 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                     # Create a unique key for each checkbox
                     checkbox_key = f'select_{key_prefix}_{idx}'
                     
-                    # Initialize the checkbox state in session state if it doesn't exist
-                    if checkbox_key not in st.session_state:
-                        st.session_state[checkbox_key] = idx in st.session_state.all_data['selected_indices']
+                    # Ensure the checkbox state exists in session state
+                    if 'selected_checkboxes' not in st.session_state:
+                        st.session_state.selected_checkboxes = {}
+                    
+                    # Initialize checkbox state if not exists
+                    if checkbox_key not in st.session_state.selected_checkboxes:
+                        st.session_state.selected_checkboxes[checkbox_key] = idx in st.session_state.all_data['selected_indices']
                     
                     # Use the checkbox with session state
                     is_selected = st.checkbox(
                         "",
                         key=checkbox_key,
-                        value=st.session_state[checkbox_key]
+                        value=st.session_state.selected_checkboxes[checkbox_key]
                     )
                 
                 # Update selection state
                 if is_selected:
                     st.session_state.all_data['selected_indices'].add(idx)
+                    st.session_state.selected_checkboxes[checkbox_key] = True
                     selected_recipes.append(row)
                 else:
                     st.session_state.all_data['selected_indices'].discard(idx)
+                    st.session_state.selected_checkboxes[checkbox_key] = False
                 
                 # Rest of your expander code remains the same
                 with expander_col:
@@ -496,13 +510,16 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                         st.write(f"• {name}")
                     
                     viz_key = f'{key_prefix}_visualize'
-                    if viz_key not in st.session_state:
-                        st.session_state[viz_key] = False
+                    if 'visualization_states' not in st.session_state:
+                        st.session_state.visualization_states = {}
+                    
+                    if viz_key not in st.session_state.visualization_states:
+                        st.session_state.visualization_states[viz_key] = False
                     
                     if st.button("Visualize Selected Recipes", key=viz_key):
-                        st.session_state[viz_key] = not st.session_state[viz_key]
+                        st.session_state.visualization_states[viz_key] = not st.session_state.visualization_states[viz_key]
                     
-                    if st.session_state[viz_key]:
+                    if st.session_state.visualization_states[viz_key]:
                         st.write("### 🍽️ Nutritional Content Distribution")
                         fig1 = create_nutrient_distribution_plot(selected_df)
                         st.pyplot(fig1)
@@ -518,8 +535,19 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
     
     # Modify your Get Recommendations button code to:
     if st.button("Get Recommendations"):
+        # Ensure session state is properly initialized
+        if not hasattr(st.session_state, 'all_data'):
+            st.session_state.all_data = {
+                'recommendations': None,
+                'selected_indices': set(),
+                'displayed_recommendations': None
+            }
+        
+        # Clear existing recommendations first
         st.session_state.all_data['displayed_recommendations'] = None
         st.session_state.all_data['selected_indices'] = set()
+        st.session_state.selected_checkboxes = {}
+        
         daily_calories = calculate_caloric_needs(gender, weight, height, age)
         protein_grams = 0.8 * weight
         fat_calories = 0.25 * daily_calories
@@ -549,11 +577,17 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
     
     # And modify your Reshuffle button code to:
     if st.button("Reshuffle Recommendations"):
+       if not hasattr(st.session_state, 'all_data'):
+        st.session_state.all_data = {
+            'recommendations': None,
+            'selected_indices': set(),
+            'displayed_recommendations': None
+        }
+    
         if st.session_state.all_data.get('recommendations') is not None:
             st.session_state.all_data['displayed_recommendations'] = None
             st.session_state.all_data['selected_indices'] = set()
-        
-            # Get unused recommendations
+            st.session_state.selected_checkboxes = {}
             used_indices = st.session_state.previous_recommendations
             remaining_recommendations = st.session_state.all_data['recommendations'][
                 ~st.session_state.all_data['recommendations'].index.isin(used_indices)
