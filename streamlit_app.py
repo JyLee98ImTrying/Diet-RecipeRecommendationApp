@@ -408,13 +408,16 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         """
         if 'current_recommendations' not in st.session_state:
             st.session_state.current_recommendations = None
+
+        if 'expander_states' not in st.session_state:
+            st.session_state.expander_states = {}
     
         # Store or retrieve recommendations
         if recommendations is not None and not recommendations.empty:
             st.session_state.current_recommendations = recommendations
         else:
             recommendations = st.session_state.current_recommendations
-    
+        
         if recommendations is not None and not recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
                 
@@ -425,8 +428,12 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 selected_recipes = []
                 for idx, row in recommendations.iterrows():
                     unique_key = f'recipe_select_{key_prefix}_{idx}'
+
+                    is_expanded = st.session_state.expander_states.get(expander_key, False)
                     
-                    with st.expander(f"📗 {row['Name']}"):
+                    with st.expander(f"📗 {row['Name']}", expanded=is_expanded):
+                        st.session_state.expander_states[expander_key] = True
+                        
                         is_selected = st.checkbox(
                             "Select this recipe",
                             key=unique_key,
@@ -477,6 +484,10 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                         instructions = format_recipe_instructions(row['RecipeInstructions'])
                         for i, step in enumerate(instructions, 1):
                             st.write(f"{i}. {step}")
+    
+                    # Update expander state when it's closed
+                    if not st.session_state.expander_states.get(expander_key):
+                        st.session_state.expander_states[expander_key] = False
             
             # Prepare selected recipes
             if selected_recipes:
