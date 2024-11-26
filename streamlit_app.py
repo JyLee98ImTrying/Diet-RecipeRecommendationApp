@@ -433,9 +433,10 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 # Checkbox in first column
                 with col1:
                     is_selected = st.checkbox(
-                        "",  # Empty label as we're putting it next to the expander
-                        key=unique_key,
-                        value=idx in st.session_state.selected_recipe_indices
+                        "Select recipe",  # Non-empty label
+                        key=checkbox_key,
+                        value=st.session_state.selected_checkboxes[checkbox_key],
+                        label_visibility='hidden'  # Hide the label
                     )
                 
                 # Expander in second column
@@ -534,7 +535,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
     
         
         # Get initial recommendations
-        recommendations = recommend_food(input_features, df, models, feature_names=feature_names)
+        recommendations = recommend_food(input_features, df, models)
         
         # Store all recommendations in cache for reshuffling
         if not recommendations.empty:
