@@ -396,33 +396,19 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         return steps
 
     def display_recommendations_with_selection(recommendations, key_prefix=''):
-        """
-        Display recommendations with checkboxes next to expander headers
-        
-        Parameters:
-        recommendations (pd.DataFrame): DataFrame of recipe recommendations
-        key_prefix (str): Unique prefix for checkbox keys to avoid collision
-        
-        Returns:
-        pd.DataFrame: Selected recipes
-        """
-        # Initialize session state for selections and recommendations
-        if 'current_recommendations' not in st.session_state:
-            st.session_state.current_recommendations = None
-        
+        # Initialize session state for selections
         if 'selected_recipe_indices' not in st.session_state:
             st.session_state.selected_recipe_indices = set()
-    
-        # Store new recommendations only if they are provided
+        
+        # Store recommendations in session state
         if recommendations is not None and not recommendations.empty:
             st.session_state.current_recommendations = recommendations
         
-        # Always use recommendations from session state
         current_recommendations = st.session_state.current_recommendations
         
         if current_recommendations is not None and not current_recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
-                
+            
             selected_recipes = []
             for idx, row in current_recommendations.iterrows():
                 unique_key = f'recipe_select_{key_prefix}_{idx}'
@@ -433,10 +419,9 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 # Checkbox in first column
                 with col1:
                     is_selected = st.checkbox(
-                        "Select recipe",  # Non-empty label
-                        key=checkbox_key,
-                        value=st.session_state.selected_checkboxes[checkbox_key],
-                        label_visibility='hidden'  # Hide the label
+                        "Select recipe", 
+                        key=unique_key,
+                        value=idx in st.session_state.selected_recipe_indices
                     )
                 
                 # Expander in second column
@@ -445,7 +430,6 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                         # Update selection state
                         if is_selected:
                             st.session_state.selected_recipe_indices.add(idx)
-                            selected_recipes.append(row)
                         else:
                             st.session_state.selected_recipe_indices.discard(idx)
                         
@@ -485,12 +469,15 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                             st.write(f"{i}. {step}")
             
             # Prepare selected recipes
-            if selected_recipes:
+            selected_recipes = current_recommendations[
+                current_recommendations.index.isin(st.session_state.selected_recipe_indices)
+            ]
+            
+            if not selected_recipes.empty:
                 st.write("### 🍽️ Selected Recipes")
-                selected_df = pd.DataFrame(selected_recipes)
-                for name in selected_df['Name']:
+                for name in selected_recipes['Name']:
                     st.write(f"• {name}")
-                
+                    
                 if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
                     st.write("### 🍽️ Nutritional Content Distribution")
                     fig1 = create_nutrient_distribution_plot(selected_df)
