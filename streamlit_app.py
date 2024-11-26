@@ -396,7 +396,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         return steps
 
     def display_recommendations_with_selection(recommendations, key_prefix=''):
-        # Extensive logging and debugging
+        # Extensive logging
         st.write(f"DEBUG: Function called with {len(recommendations) if recommendations is not None else 0} recommendations")
         
         # Validate recommendations
@@ -404,37 +404,28 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             st.warning("No recommendations found. Please try different inputs.")
             return pd.DataFrame()
     
-        # Initialize session state with explicit logging
-        if 'debug_counter' not in st.session_state:
-            st.session_state.debug_counter = 0
-        st.session_state.debug_counter += 1
-        st.write(f"DEBUG: Function call counter - {st.session_state.debug_counter}")
-    
-        # Initialize session state variables with logging
-        if 'current_recommendations' not in st.session_state:
-            st.session_state.current_recommendations = recommendations
-            st.write("DEBUG: Initialized current_recommendations")
+        # Explicit session state management
+        if 'full_recommendations' not in st.session_state:
+            st.session_state.full_recommendations = recommendations
+        
+        if 'displayed_recommendations' not in st.session_state:
+            st.session_state.displayed_recommendations = recommendations.head(5)
         
         if 'selected_recipes' not in st.session_state:
             st.session_state.selected_recipes = []
-            st.write("DEBUG: Initialized selected_recipes")
     
-        # Use current stored recommendations
-        current_recommendations = st.session_state.current_recommendations
-        st.write(f"DEBUG: Current recommendations count - {len(current_recommendations)}")
+        # Write debug information
+        st.write(f"DEBUG: Full recommendations count - {len(st.session_state.full_recommendations)}")
+        st.write(f"DEBUG: Currently displayed recommendations - {len(st.session_state.displayed_recommendations)}")
     
-        # Main recommendations display
         st.write("### 🍳 Recommended Food Items (Single Serving)")
         
-        # Create a placeholder to manage state without full page reload
-        recommendations_placeholder = st.empty()
+        # Use a container to maintain state
+        recommendations_container = st.container()
         
-        with recommendations_placeholder.container():
-            # Debugging: Show all current recommendations
-            st.write(f"DEBUG: Displaying {len(current_recommendations)} recommendations")
-            
-            for idx, row in current_recommendations.iterrows():
-                # Unique expander for each recipe
+        with recommendations_container:
+            # Always use displayed_recommendations from session state
+            for idx, row in st.session_state.displayed_recommendations.iterrows():
                 with st.expander(f"📗 {row['Name']} (Recipe {idx})", key=f'expander_{idx}'):
                     col1, col2 = st.columns(2)
                     
@@ -452,25 +443,18 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                         st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
                         st.write(f"• Sugar: {row['SugarContent']:.1f}g")
                     
-                    # Unique selection method with additional debugging
+                    # Unique selection method
                     if st.button(f"Select {row['Name']}", key=f'select_button_{idx}'):
-                        st.write(f"DEBUG: Button clicked for {row['Name']}")
-                        
-                        # Convert row to dictionary
                         recipe_dict = row.to_dict()
                         
-                        # Check for duplicates with logging
+                        # Check for duplicates 
                         if recipe_dict not in st.session_state.selected_recipes:
                             st.session_state.selected_recipes.append(recipe_dict)
-                            st.write(f"DEBUG: Added {row['Name']} to selected recipes")
                             st.toast(f"Added {row['Name']} to selected recipes!")
-                        else:
-                            st.write(f"DEBUG: {row['Name']} already in selected recipes")
     
-        # Selected Recipes Section with debugging
+        # Selected Recipes Section
         if st.session_state.selected_recipes:
             st.write("### 🍽️ Selected Recipes")
-            st.write(f"DEBUG: {len(st.session_state.selected_recipes)} recipes selected")
             
             selected_df = pd.DataFrame(st.session_state.selected_recipes)
             
@@ -481,29 +465,38 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             # Visualization Section
             st.write("### 🍽️ Nutritional Breakdown")
             
-            try:
-                # Calories Pie Chart
-                st.write("#### Calories Distribution")
-                fig_calories = create_calories_summary_plot(selected_df)
-                st.pyplot(fig_calories)
-                
-                # Nutrient Distribution
-                st.write("#### Nutrient Content Distribution")
-                fig_nutrients = create_nutrient_distribution_plot(selected_df)
-                st.pyplot(fig_nutrients)
-            except Exception as e:
-                st.error(f"DEBUG: Error in visualization - {e}")
+            # Calories Pie Chart
+            st.write("#### Calories Distribution")
+            fig_calories = create_calories_summary_plot(selected_df)
+            st.pyplot(fig_calories)
+            
+            # Nutrient Distribution
+            st.write("#### Nutrient Content Distribution")
+            fig_nutrients = create_nutrient_distribution_plot(selected_df)
+            st.pyplot(fig_nutrients)
             
             # Clear selections
             if st.button("Clear Selected Recipes"):
                 st.session_state.selected_recipes = []
-                st.write("DEBUG: Cleared selected recipes")
-
-            
-            return current_recommendations
-        else:
-            st.warning("No recommendations found. Please try different inputs.")
-            return pd.DataFrame()
+    
+        # Additional recommendation controls
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("Show More Recommendations"):
+                # Get next 5 recommendations not already displayed
+                current_displayed_indices = set(st.session_state.displayed_recommendations.index)
+                next_recommendations = st.session_state.full_recommendations[
+                    ~st.session_state.full_recommendations.index.isin(current_displayed_indices)
+                ].head(5)
+                
+                if not next_recommendations.empty:
+                    st.session_state.displayed_recommendations = next_recommendations
+                    st.experimental_rerun()
+                else:
+                    st.warning("No more recommendations available")
+    
+        return st.session_state.displayed_recommendations
             
     if st.button("Get Recommendations"):
         daily_calories = calculate_caloric_needs(gender, weight, height, age)
