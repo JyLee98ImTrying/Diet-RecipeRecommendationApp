@@ -423,7 +423,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 with col1:
                     # Use st.checkbox with key and current selection state
                     is_selected = st.checkbox(
-                        "Select recipe",  
+                        "Select",  
                         key=unique_key,
                         value=idx in st.session_state.selected_recipe_indices
                     )
