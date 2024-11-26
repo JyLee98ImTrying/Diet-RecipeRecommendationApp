@@ -396,24 +396,20 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         return steps
 
     def display_recommendations_with_selection(recommendations, key_prefix=''):
-        # Ensure session state is initialized
+        # Ensure session state variables are properly initialized
         if 'current_recommendations' not in st.session_state:
-            st.session_state.current_recommendations = None
-        
+            st.session_state.current_recommendations = recommendations
+    
         if 'selected_recipe_indices' not in st.session_state:
             st.session_state.selected_recipe_indices = set()
         
-        # Store new recommendations if provided
-        if recommendations is not None and not recommendations.empty:
-            st.session_state.current_recommendations = recommendations
-        
-        # Use the recommendations from session state
+        # Always use recommendations from session state if available
         current_recommendations = st.session_state.current_recommendations
         
         if current_recommendations is not None and not current_recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
             
-            # Create a copy to track selections without modifying original
+            # Create a temporary display copy
             displayed_recommendations = current_recommendations.copy()
             
             for idx, row in displayed_recommendations.iterrows():
@@ -425,17 +421,17 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 
                 # Checkbox in first column
                 with col1:
+                    # Use st.checkbox with key and current selection state
                     is_selected = st.checkbox(
                         "Select recipe",  
                         key=unique_key,
-                        # Check if this index is in selected indices
                         value=idx in st.session_state.selected_recipe_indices
                     )
                 
                 # Expander in second column
                 with col2:
                     with st.expander(f"📗 {row['Name']}"):
-                        # Manage selection state
+                        # Manage selection state BEFORE other content
                         if is_selected:
                             st.session_state.selected_recipe_indices.add(idx)
                         else:
