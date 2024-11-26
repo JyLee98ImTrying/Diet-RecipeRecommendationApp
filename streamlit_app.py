@@ -396,24 +396,25 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         return steps
 
     def display_recommendations_with_selection(recommendations, key_prefix=''):
-        # Ensure session state is initialized
+        # Ensure session state variables are initialized
+        if 'current_recommendations' not in st.session_state:
+            st.session_state.current_recommendations = recommendations
+        
         if 'selected_recipes' not in st.session_state:
             st.session_state.selected_recipes = []
     
-        # If recommendations are provided, update current recommendations
-        if recommendations is not None and not recommendations.empty:
+        # Retrieve current recommendations from session state
+        current_recommendations = st.session_state.current_recommendations
+    
+        if current_recommendations is not None and not current_recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
             
-            # Container for recipes
-            recipe_container = st.container()
-            with recipe_container:
-                # Create a dataframe to track selections
-                selection_df = recommendations.copy()
-                selection_df['Selected'] = False
-                
-                # Iterate through recipes
-                for idx, row in selection_df.iterrows():
-                    # Create an expander for each recipe
+            # Create a container to hold the entire recommendations section
+            recommendations_container = st.container()
+            
+            with recommendations_container:
+                # Ensure all current recommendations are displayed
+                for idx, row in current_recommendations.iterrows():
                     with st.expander(f"📗 {row['Name']}"):
                         col1, col2 = st.columns(2)
                         
@@ -431,25 +432,29 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                             st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
                             st.write(f"• Sugar: {row['SugarContent']:.1f}g")
                         
-                        # Add selection button within each expander
-                        if st.button(f"Select {row['Name']}", key=f'select_{idx}'):
-                            # Check if recipe is already selected to prevent duplicates
-                            if row.to_dict() not in st.session_state.selected_recipes:
-                                st.session_state.selected_recipes.append(row.to_dict())
+                        # Unique key for each select button
+                        select_key = f'select_recipe_{idx}'
+                        
+                        # Select button
+                        if st.button(f"Select {row['Name']}", key=select_key):
+                            # Convert row to dictionary and check for duplicates
+                            recipe_dict = row.to_dict()
+                            if recipe_dict not in st.session_state.selected_recipes:
+                                st.session_state.selected_recipes.append(recipe_dict)
                                 st.success(f"Added {row['Name']} to selected recipes!")
     
-            # Display selected recipes section
+            # Selected Recipes Section
             if st.session_state.selected_recipes:
                 st.write("### 🍽️ Selected Recipes")
                 
-                # Convert selected recipes back to dataframe for visualization
+                # Convert selected recipes to DataFrame
                 selected_df = pd.DataFrame(st.session_state.selected_recipes)
                 
                 # Display selected recipe names
                 for recipe in selected_df['Name']:
                     st.write(f"• {recipe}")
                 
-                # Visualization section
+                # Visualization Section
                 st.write("### 🍽️ Nutritional Breakdown")
                 
                 # Calories Pie Chart
@@ -462,12 +467,12 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 fig_nutrients = create_nutrient_distribution_plot(selected_df)
                 st.pyplot(fig_nutrients)
                 
-                # Optional: Clear selections button
+                # Clear selections button
                 if st.button("Clear Selected Recipes"):
                     st.session_state.selected_recipes = []
                     st.experimental_rerun()
             
-            return recommendations
+            return current_recommendations
         else:
             st.warning("No recommendations found. Please try different inputs.")
             return pd.DataFrame()
