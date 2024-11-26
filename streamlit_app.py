@@ -516,9 +516,9 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         
         # Store all recommendations in cache for reshuffling
         if not recommendations.empty:
-            st.session_state.all_recommendations_cache = recommendations
+            st.session_state.selected_recipe_indices = set()
             # Store the indices of shown recommendations
-            st.session_state.previous_recommendations.update(recommendations.index[:5].tolist())
+            st.session_state.all_recommendations_cache = recommendations
             # Display only top 5 recommendations
             display_recommendations_with_selection(recommendations.head(5))
         else:
@@ -526,23 +526,19 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
     
     # Update the reshuffle button section similarly:
     if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'all_recommendations_cache'):
-        if st.session_state.all_recommendations_cache is not None:
-            # Get all recommendations excluding previously shown ones
-            remaining_recommendations = st.session_state.all_recommendations_cache[
-                ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
-            ]
-            
-            if not remaining_recommendations.empty:
-                # Get next 5 recommendations
-                new_recommendations = remaining_recommendations.head(5)
-                # Update shown recommendations
-                st.session_state.previous_recommendations.update(new_recommendations.index.tolist())
-                # Display new recommendations
-                display_recommendations_with_selection(new_recommendations)
-            else:
-                st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
+        if hasattr(st.session_state, 'all_recommendations_cache'):
+            st.session_state.selected_recipe_indices = set()
+        
+        remaining_recommendations = st.session_state.all_recommendations_cache[
+            ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
+        ]
+        
+        if not remaining_recommendations.empty:
+            new_recommendations = remaining_recommendations.head(5)
+            st.session_state.previous_recommendations.update(new_recommendations.index.tolist())
+            display_recommendations_with_selection(new_recommendations)
         else:
-            st.warning("Please get initial recommendations first.")
+            st.warning("No more recommendations available.")
         
 #Weightloss prediction
 elif page == "⚖️Weight Loss Prediction":
