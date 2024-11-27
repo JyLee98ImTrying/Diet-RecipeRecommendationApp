@@ -11,6 +11,7 @@ from itertools import zip_longest
 import plotly.express as px
 import xgboost as xgb
 import datetime
+import time
 
 st.cache_data.clear()
 
@@ -409,19 +410,29 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         # Create a deep copy of recommendations to prevent unintended modifications
         current_recommendations = recommendations.copy()
         
+        unique_session_key = str(int(time.time()))
+        
         if not current_recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
             
             selected_rows = []
-            
-            for idx, row in current_recommendations.iterrows():
-                unique_key = f'recipe_select_{key_prefix}_{idx}'
-                
-                # Debug: add recipe name to checkbox
-                is_selected = st.checkbox(
-                    f"Select {row['Name']}", 
-                    key=unique_key
-                )
+            if not recommendations.empty:
+                for idx, row in recommendations.iterrows():
+                    # Create a truly unique key by combining multiple elements
+                    unique_key = f'recipe_select_{unique_session_key}_{key_prefix}_{idx}'
+                    
+                    is_selected = st.checkbox(
+                        f"Select {row['Name']}", 
+                        key=unique_key,
+                        value=row['Name'] in st.session_state.get('selected_recipes', [])
+                    )
+                    
+                    if is_selected:
+                        if row['Name'] not in st.session_state.selected_recipes:
+                            st.session_state.selected_recipes.append(row['Name'])
+                    else:
+                        if row['Name'] in st.session_state.selected_recipes:
+                            st.session_state.selected_recipes.remove(row['Name'])
                 
                 with st.expander(f"📗 {row['Name']}"):
                     # Rest of your existing expander content...
