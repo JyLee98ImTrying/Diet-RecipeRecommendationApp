@@ -364,14 +364,12 @@ if page == "ReadMe 📖":
 if page == "🍅🧀MyHealthMyFood🥑🥬":
     st.title('🍅🧀MyHealthMyFood🥑🥬')
 
+    if 'current_recommendations' not in st.session_state:
+        st.session_state.current_recommendations = pd.DataFrame()
+    if 'all_recommendations_cache' not in st.session_state:
+        st.session_state.all_recommendations_cache = pd.DataFrame()
     if 'previous_recommendations' not in st.session_state:
         st.session_state.previous_recommendations = set()
-    if 'recommendations' not in st.session_state:
-        st.session_state.recommendations = None
-    if 'selected_recipes' not in st.session_state:
-        st.session_state.selected_recipes = set()
-    if 'all_recommendations_cache' not in st.session_state:
-        st.session_state.all_recommendations_cache = None
 
     if df is not None and models is not None:
         # User inputs
@@ -465,10 +463,22 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 st.write("### 🍽️ Selected Recipes")
                 
                 # Get full rows for selected recipe names
-                selected_rows = current_recommendations[current_recommendations['Name'].isin(st.session_state.selected_recipe_names)]
+                is_selected = st.checkbox(
+                    f"Select {row['Name']}", 
+                    key=unique_key,
+                    value=row['Name'] in st.session_state.get('selected_recipe_names', [])
+                )
                 
-                for name in selected_rows['Name']:
-                    st.write(f"• {name}")
+                if is_selected:
+                    if 'selected_recipe_names' not in st.session_state:
+                        st.session_state.selected_recipe_names = []
+                    if row['Name'] not in st.session_state.selected_recipe_names:
+                        st.session_state.selected_recipe_names.append(row['Name'])
+                else:
+                    if 'selected_recipe_names' in st.session_state and row['Name'] in st.session_state.selected_recipe_names:
+                        st.session_state.selected_recipe_names.remove(row['Name'])
+                                for name in selected_rows['Name']:
+                                    st.write(f"• {name}")
                 
                 if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
                     st.write("### 🍽️ Nutritional Content Distribution")
@@ -519,47 +529,33 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         
         # Get initial recommendations
         recommendations = recommend_food(input_features, df, models)
-        
-        if not recommendations.empty:
-            st.write(f"Debug: Total recommendations found: {len(recommendations)}")
-            st.session_state.all_recommendations_cache = recommendations
-            display_recommendations_with_selection(recommendations.head(5))
-        else:
-            st.warning("No recommendations found. Please try different inputs.")
 
-        
         # Store all recommendations in cache for reshuffling
         if not recommendations.empty:
+            st.session_state.current_recommendations = recommendations.head(5)
             st.session_state.all_recommendations_cache = recommendations
-            # Store the indices of shown recommendations
-            st.session_state.previous_recommendations.update(recommendations.index[:5].tolist())
-            # Display only top 5 recommendations
-            display_recommendations_with_selection(recommendations.head(5))
+            display_recommendations_with_selection(st.session_state.current_recommendations)
         else:
             st.warning("No recommendations found. Please try different inputs.")
     
     # Update the reshuffle button section similarly:
     if st.button("Reshuffle Recommendations"):
-        if hasattr(st.session_state, 'all_recommendations_cache') and st.session_state.all_recommendations_cache is not None:
-            # Get all recommendations excluding previously shown ones
+        if hasattr(st.session_state, 'all_recommendations_cache') and not st.session_state.all_recommendations_cache.empty:
             remaining_recommendations = st.session_state.all_recommendations_cache[
                 ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
             ]
             
             if not remaining_recommendations.empty:
-                # Get next 5 recommendations
                 new_recommendations = remaining_recommendations.head(5)
                 
-                # Update displayed recommendations in session state
-                st.session_state.displayed_recommendations = new_recommendations
-                
-                # Update shown recommendations
+                # Update session state
+                st.session_state.current_recommendations = new_recommendations
                 st.session_state.previous_recommendations.update(new_recommendations.index.tolist())
                 
-                # Rerun to refresh the page with new recommendations
-                st.experimental_rerun()
+                # Display without rerun
+                display_recommendations_with_selection(st.session_state.current_recommendations)
             else:
-                st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
+                st.warning("No more recommendations available.")
         else:
             st.warning("Please get initial recommendations first.")
 
