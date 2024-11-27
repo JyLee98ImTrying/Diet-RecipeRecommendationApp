@@ -400,39 +400,30 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
 
     def display_recommendations_with_selection(recommendations, key_prefix=''):
         # Debug print
-        if 'selected_recipe_names' not in st.session_state:
-            st.session_state.selected_recipe_names = []
-        
-        # Initialize session state more explicitly
         if 'selected_recipes' not in st.session_state:
             st.session_state.selected_recipes = []
         
-        # Create a deep copy of recommendations to prevent unintended modifications
-        current_recommendations = recommendations.copy()
+        # Debug print
+        st.write(f"Debug: Total recommendations received: {len(recommendations)}")
         
-        unique_session_key = str(int(time.time()))
-        
-        if not current_recommendations.empty:
+        if not recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
             
-            selected_rows = []
-            if not recommendations.empty:
-                for idx, row in recommendations.iterrows():
-                    # Create a truly unique key by combining multiple elements
-                    unique_key = f'recipe_select_{unique_session_key}_{key_prefix}_{idx}'
-                    
-                    is_selected = st.checkbox(
-                        f"Select {row['Name']}", 
-                        key=unique_key,
-                        value=row['Name'] in st.session_state.get('selected_recipes', [])
-                    )
-                    
-                    if is_selected:
-                        if row['Name'] not in st.session_state.selected_recipes:
-                            st.session_state.selected_recipes.append(row['Name'])
-                    else:
-                        if row['Name'] in st.session_state.selected_recipes:
-                            st.session_state.selected_recipes.remove(row['Name'])
+            for idx, row in recommendations.iterrows():
+                unique_key = f'recipe_select_{key_prefix}_{idx}'
+                
+                is_selected = st.checkbox(
+                    f"Select {row['Name']}", 
+                    key=unique_key,
+                    value=row['Name'] in st.session_state.selected_recipes
+                )
+                
+                if is_selected:
+                    if row['Name'] not in st.session_state.selected_recipes:
+                        st.session_state.selected_recipes.append(row['Name'])
+                else:
+                    if row['Name'] in st.session_state.selected_recipes:
+                        st.session_state.selected_recipes.remove(row['Name'])
                 
                 with st.expander(f"📗 {row['Name']}"):
                     # Rest of your existing expander content...
@@ -473,8 +464,10 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                             st.write(f"{i}. {step}")
             
             # Prepare selected recipes for display
-            if st.session_state.selected_recipe_names:
+            if st.session_state.selected_recipes:
                 st.write("### 🍽️ Selected Recipes")
+                for name in st.session_state.selected_recipes:
+                    st.write(f"• {name}")
 
             for idx, row in current_recommendations.iterrows():
                 unique_key = f'recipe_select_{key_prefix}_{idx}'
@@ -522,6 +515,12 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
    
             
     if st.button("Get Recommendations"):
+        # Initialize or restore recommendation-related session states
+        if 'all_recommendations_cache' not in st.session_state:
+            st.session_state.all_recommendations_cache = pd.DataFrame()
+        if 'previous_recommendations' not in st.session_state:
+            st.session_state.previous_recommendations = set()
+            
         daily_calories = calculate_caloric_needs(gender, weight, height, age)
         protein_grams = 0.8 * weight
         fat_calories = 0.25 * daily_calories
@@ -574,7 +573,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 st.session_state.current_recommendations = new_recommendations
                 st.session_state.previous_recommendations.update(new_recommendations.index.tolist())
                 
-                # Display without rerun
+                # Display new recommendations
                 display_recommendations_with_selection(st.session_state.current_recommendations)
             else:
                 st.warning("No more recommendations available.")
