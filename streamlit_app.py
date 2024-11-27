@@ -486,20 +486,21 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                             st.write(f"{i}. {step}")
             
             # Prepare selected recipes
-            if selected_recipes:
+             if selected_recipes:
                 st.write("### 🍽️ Selected Recipes")
                 selected_df = pd.DataFrame(selected_recipes)
+                
+                # Explicitly store selected recipes and their names in session state
+                st.session_state.selected_recipes_df = selected_df
+                st.session_state.selected_recipe_names = selected_df['Name'].tolist()
+                
                 for name in selected_df['Name']:
                     st.write(f"• {name}")
                 
-                if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
-                    st.write("### 🍽️ Nutritional Content Distribution")
-                    fig1 = create_nutrient_distribution_plot(selected_df)
-                    st.pyplot(fig1)
-                    
-                    st.write("### 🔢 Calories Breakdown")
-                    fig2 = create_calories_summary_plot(selected_df)
-                    st.pyplot(fig2)
+                # Add a button to navigate to Recipe Selection page
+                if st.button("View Selected Recipes", key=f'{key_prefix}_view_selection'):
+                    st.switch_page("pages/recipe_selection.py")
+            
         
             return current_recommendations
         else:
@@ -572,9 +573,11 @@ def recipe_selection_page():
     st.title('🍽️ Recipe Selection and Nutrition Analysis')
     
     # Check if there are any selected recipes
-    if 'selected_recipe_indices' not in st.session_state or not st.session_state.selected_recipe_indices:
+    if 'selected_recipes_df' not in st.session_state or st.session_state.selected_recipes_df.empty:
         st.warning("No recipes have been selected yet. Please go back to MyHealthMyFood page and select some recipes.")
         return
+
+    selected_recipes = st.session_state.selected_recipes_df
     
     # If recipes were selected, retrieve them from the previous page
     if 'current_recommendations' in st.session_state and not st.session_state.current_recommendations.empty:
