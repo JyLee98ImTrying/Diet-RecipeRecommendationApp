@@ -478,6 +478,12 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
 
             for idx, row in current_recommendations.iterrows():
                 unique_key = f'recipe_select_{key_prefix}_{idx}'
+
+                # Get full rows for selected recipe names
+                selected_rows = current_recommendations[current_recommendations['Name'].isin(st.session_state.selected_recipes)]
+                
+                for name in selected_rows['Name']:
+                    st.write(f"• {name}")
                 
                 # Get full rows for selected recipe names
                 is_selected = st.checkbox(
