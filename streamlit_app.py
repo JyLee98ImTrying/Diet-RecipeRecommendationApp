@@ -370,7 +370,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
     st.title('🍅🧀MyHealthMyFood🥑🥬')
 
     if 'previous_recommendations' not in st.session_state:
-    st.session_state.previous_recommendations = set()
+        st.session_state.previous_recommendations = set()
 
     if df is not None and models is not None:
         # User inputs
