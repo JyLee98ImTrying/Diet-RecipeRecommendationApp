@@ -370,6 +370,8 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         st.session_state.all_recommendations_cache = pd.DataFrame()
     if 'previous_recommendations' not in st.session_state:
         st.session_state.previous_recommendations = set()
+    if 'selected_recipe_names' not in st.session_state:
+        st.session_state.selected_recipe_names = []
 
     if df is not None and models is not None:
         # User inputs
@@ -397,7 +399,8 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
 
     def display_recommendations_with_selection(recommendations, key_prefix=''):
         # Debug print
-        st.write(f"Debug: Total recommendations received: {len(recommendations)}")
+        if 'selected_recipe_names' not in st.session_state:
+            st.session_state.selected_recipe_names = []
         
         # Initialize session state more explicitly
         if 'selected_recipes' not in st.session_state:
@@ -461,6 +464,9 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             # Prepare selected recipes for display
             if st.session_state.selected_recipe_names:
                 st.write("### 🍽️ Selected Recipes")
+
+            for idx, row in current_recommendations.iterrows():
+                unique_key = f'recipe_select_{key_prefix}_{idx}'
                 
                 # Get full rows for selected recipe names
                 is_selected = st.checkbox(
@@ -470,12 +476,10 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 )
                 
                 if is_selected:
-                    if 'selected_recipe_names' not in st.session_state:
-                        st.session_state.selected_recipe_names = []
                     if row['Name'] not in st.session_state.selected_recipe_names:
                         st.session_state.selected_recipe_names.append(row['Name'])
                 else:
-                    if 'selected_recipe_names' in st.session_state and row['Name'] in st.session_state.selected_recipe_names:
+                    if row['Name'] in st.session_state.selected_recipe_names:
                         st.session_state.selected_recipe_names.remove(row['Name'])
                         
                 for name in selected_rows['Name']:
