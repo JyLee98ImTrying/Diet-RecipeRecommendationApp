@@ -520,6 +520,15 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         # Get initial recommendations
         recommendations = recommend_food(input_features, df, models)
         
+        if not recommendations.empty:
+            st.write(f"Debug: Total recommendations found: {len(recommendations)}")
+            st.session_state.all_recommendations_cache = recommendations
+            display_recommendations_with_selection(recommendations.head(5))
+        else:
+            st.warning("No recommendations found. Please try different inputs.")
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+        
         # Store all recommendations in cache for reshuffling
         if not recommendations.empty:
             st.session_state.all_recommendations_cache = recommendations
