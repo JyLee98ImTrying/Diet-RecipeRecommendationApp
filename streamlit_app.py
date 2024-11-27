@@ -398,65 +398,42 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         return steps
 
     def display_recommendations_with_selection(recommendations, key_prefix=''):
-        """
-        Display recommendations with checkboxes next to expander headers
+        # Debug print
+        st.write(f"Debug: Total recommendations received: {len(recommendations)}")
         
-        Parameters:
-        recommendations (pd.DataFrame): DataFrame of recipe recommendations
-        key_prefix (str): Unique prefix for checkbox keys to avoid collision
+        # Initialize session state more explicitly
+        if 'selected_recipes' not in st.session_state:
+            st.session_state.selected_recipes = []
         
-        Returns:
-        pd.DataFrame: Selected recipes
-        """
-        # Initialize session state for selections if not already exists
-        if 'selected_recipe_names' not in st.session_state:
-            st.session_state.selected_recipe_names = set()
+        # Create a deep copy of recommendations to prevent unintended modifications
+        current_recommendations = recommendations.copy()
         
-        # Ensure displayed_recommendations exists
-        if 'displayed_recommendations' not in st.session_state:
-            st.session_state.displayed_recommendations = recommendations
-        
-        current_recommendations = st.session_state.displayed_recommendations
-        
-        if current_recommendations is not None and not current_recommendations.empty:
+        if not current_recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
             
-            # Prepare for storing selected rows
             selected_rows = []
             
             for idx, row in current_recommendations.iterrows():
                 unique_key = f'recipe_select_{key_prefix}_{idx}'
                 
-                # Create columns for checkbox and expander
-                col1, col2 = st.columns([1, 11])
+                # Debug: add recipe name to checkbox
+                is_selected = st.checkbox(
+                    f"Select {row['Name']}", 
+                    key=unique_key
+                )
                 
-                # Checkbox in first column
-                with col1:
-                    # Check if recipe is already in selected names
-                    is_selected = st.checkbox(
-                        "",  # Empty label 
-                        key=unique_key,
-                        value=row['Name'] in st.session_state.selected_recipe_names
-                    )
-                
-                # Expander in second column
-                with col2:
-                    with st.expander(f"📗 {row['Name']}"):
-                        # Update selection state directly based on checkbox
-                        if is_selected:
-                            st.session_state.selected_recipe_names.add(row['Name'])
-                        else:
-                            st.session_state.selected_recipe_names.discard(row['Name'])
-                        
-                        # Display recipe details (rest of the existing code remains the same)
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            st.write("**📊 Nutritional Information**")
-                            st.write(f"• Calories: {row['Calories']:.1f}")
-                            st.write(f"• Protein: {row['ProteinContent']:.1f}g")
-                            st.write(f"• Fat: {row['FatContent']:.1f}g")
-                            st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
+                with st.expander(f"📗 {row['Name']}"):
+                    # Rest of your existing expander content...
+                    
+                    # Nutritional information display remains the same
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.write("**📊 Nutritional Information**")
+                        st.write(f"• Calories: {row['Calories']:.1f}")
+                        st.write(f"• Protein: {row['ProteinContent']:.1f}g")
+                        st.write(f"• Fat: {row['FatContent']:.1f}g")
+                        st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
                         
                         with col2:
                             st.write("**🔍 Additional Details**")
@@ -501,6 +478,9 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                     st.write("### 🔢 Calories Breakdown")
                     fig2 = create_calories_summary_plot(selected_rows)
                     st.pyplot(fig2)
+
+                    st.write(f"Debug: Number of rows displayed: {len(current_recommendations)}")
+    
             
             return current_recommendations
         else:
