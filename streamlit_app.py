@@ -498,12 +498,14 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                     st.write("### 🔢 Calories Breakdown")
                     fig2 = create_calories_summary_plot(selected_df)
                     st.pyplot(fig2)
-        
-        return current_recommendations
-            else:
-                if not st.session_state.get('current_recommendations'):
-                    st.warning("No recommendations found. Please try different inputs.")
-                return pd.DataFrame()
+
+                    
+            return current_recommendations
+        else:
+            if not st.session_state.get('current_recommendations'):
+                st.warning("No recommendations found. Please try different inputs.")
+            return pd.DataFrame()
+   
             
     if st.button("Get Recommendations"):
         daily_calories = calculate_caloric_needs(gender, weight, height, age)
