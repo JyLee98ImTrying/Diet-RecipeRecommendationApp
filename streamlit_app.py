@@ -477,8 +477,8 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 else:
                     if 'selected_recipe_names' in st.session_state and row['Name'] in st.session_state.selected_recipe_names:
                         st.session_state.selected_recipe_names.remove(row['Name'])
-                                for name in selected_rows['Name']:
-                                    st.write(f"• {name}")
+                            for name in selected_rows['Name']:
+                                st.write(f"• {name}")
                 
                 if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
                     st.write("### 🍽️ Nutritional Content Distribution")
