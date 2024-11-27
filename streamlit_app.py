@@ -486,7 +486,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                             st.write(f"{i}. {step}")
             
             # Prepare selected recipes
-             if selected_recipes:
+            if selected_recipes:
                 st.write("### 🍽️ Selected Recipes")
                 selected_df = pd.DataFrame(selected_recipes)
                 
