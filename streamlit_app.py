@@ -407,9 +407,10 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         pd.DataFrame: Selected recipes
         """
         # Initialize session state for selections if not already exists
-        if 'selected_recipes' not in st.session_state:
-            st.session_state.selected_recipes = []
+        if 'selected_recipe_names' not in st.session_state:
+            st.session_state.selected_recipe_names = set()
         
+        # Ensure displayed_recommendations exists
         if 'displayed_recommendations' not in st.session_state:
             st.session_state.displayed_recommendations = recommendations
         
@@ -417,6 +418,9 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         
         if current_recommendations is not None and not current_recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
+            
+            # Prepare for storing selected rows
+            selected_rows = []
             
             for idx, row in current_recommendations.iterrows():
                 unique_key = f'recipe_select_{key_prefix}_{idx}'
@@ -426,29 +430,23 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 
                 # Checkbox in first column
                 with col1:
+                    # Check if recipe is already in selected names
                     is_selected = st.checkbox(
                         "",  # Empty label 
                         key=unique_key,
-                        # Check if this recipe is already in selected recipes
-                        value=any(row['Name'] == selected_row['Name'] for selected_row in st.session_state.selected_recipes)
+                        value=row['Name'] in st.session_state.selected_recipe_names
                     )
                 
                 # Expander in second column
                 with col2:
                     with st.expander(f"📗 {row['Name']}"):
-                        # Update selection state
+                        # Update selection state directly based on checkbox
                         if is_selected:
-                            # Only add if not already in selected_recipes
-                            if not any(row['Name'] == selected_row['Name'] for selected_row in st.session_state.selected_recipes):
-                                st.session_state.selected_recipes.append(row)
+                            st.session_state.selected_recipe_names.add(row['Name'])
                         else:
-                            # Remove from selected_recipes if unchecked
-                            st.session_state.selected_recipes = [
-                                selected_row for selected_row in st.session_state.selected_recipes 
-                                if selected_row['Name'] != row['Name']
-                            ]
+                            st.session_state.selected_recipe_names.discard(row['Name'])
                         
-                        # Display recipe details
+                        # Display recipe details (rest of the existing code remains the same)
                         col1, col2 = st.columns(2)
                         
                         with col1:
@@ -483,23 +481,25 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                         for i, step in enumerate(instructions, 1):
                             st.write(f"{i}. {step}")
             
-            # Prepare selected recipes
-            if st.session_state.selected_recipes:
+            # Prepare selected recipes for display
+            if st.session_state.selected_recipe_names:
                 st.write("### 🍽️ Selected Recipes")
-                selected_df = pd.DataFrame(st.session_state.selected_recipes)
-                for name in selected_df['Name']:
+                
+                # Get full rows for selected recipe names
+                selected_rows = current_recommendations[current_recommendations['Name'].isin(st.session_state.selected_recipe_names)]
+                
+                for name in selected_rows['Name']:
                     st.write(f"• {name}")
                 
                 if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
                     st.write("### 🍽️ Nutritional Content Distribution")
-                    fig1 = create_nutrient_distribution_plot(selected_df)
+                    fig1 = create_nutrient_distribution_plot(selected_rows)
                     st.pyplot(fig1)
                     
                     st.write("### 🔢 Calories Breakdown")
-                    fig2 = create_calories_summary_plot(selected_df)
+                    fig2 = create_calories_summary_plot(selected_rows)
                     st.pyplot(fig2)
-
-                    
+            
             return current_recommendations
         else:
             if not st.session_state.get('current_recommendations'):
