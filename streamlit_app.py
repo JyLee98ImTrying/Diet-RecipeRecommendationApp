@@ -500,10 +500,10 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                     st.pyplot(fig2)
         
         return current_recommendations
-    else:
-        if not st.session_state.get('current_recommendations'):
-            st.warning("No recommendations found. Please try different inputs.")
-        return pd.DataFrame()
+            else:
+                if not st.session_state.get('current_recommendations'):
+                    st.warning("No recommendations found. Please try different inputs.")
+                return pd.DataFrame()
             
     if st.button("Get Recommendations"):
         daily_calories = calculate_caloric_needs(gender, weight, height, age)
