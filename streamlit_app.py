@@ -568,95 +568,89 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         else:
             st.warning("Please get initial recommendations first.")
 
-if page == "🍽️ Recipe Selection and Nutrition Analysis":
+def recipe_selection_page():
     st.title('🍽️ Recipe Selection and Nutrition Analysis')
     
-    def recipe_selection_page():
-        st.title('🍽️ Recipe Selection and Nutrition Analysis')
-        
-        # Check if there are any previously selected recipes
-        if 'selected_recipe_names' not in st.session_state or not st.session_state.selected_recipe_names:
-            st.warning("No recipes have been selected yet. Please go back to MyHealthMyFood page and select some recipes.")
-            return
-        
-        # If recipes were selected, retrieve them from the previous page
-        if 'current_recommendations' in st.session_state and not st.session_state.current_recommendations.empty:
-            # Filter only the selected recipes
-            selected_indices = st.session_state.selected_recipe_indices
-            selected_recipes = st.session_state.current_recommendations.loc[list(selected_indices)]
-            
-            # Display selected recipes in a more compact format
-            st.write("### 📋 Selected Recipes")
-            for idx, recipe in selected_recipes.iterrows():
-                st.write(f"• {recipe['Name']}")
-            
-            # Nutrition Analysis Section
-            st.write("### 📊 Nutrition Analysis")
-            
-            # Total Nutrition Breakdown
-            st.write("#### Total Nutritional Content")
-            total_nutrition = selected_recipes.agg({
-                'Calories': 'sum',
-                'ProteinContent': 'sum',
-                'FatContent': 'sum',
-                'CarbohydrateContent': 'sum',
-                'SodiumContent': 'sum',
-                'CholesterolContent': 'sum',
-                'SaturatedFatContent': 'sum',
-                'SugarContent': 'sum'
-            })
-            
-            # Create two columns for displaying total nutrition
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.write("**Macronutrients**")
-                st.write(f"• Total Calories: {total_nutrition['Calories']:.1f}")
-                st.write(f"• Total Protein: {total_nutrition['ProteinContent']:.1f}g")
-                st.write(f"• Total Fat: {total_nutrition['FatContent']:.1f}g")
-                st.write(f"• Total Carbohydrates: {total_nutrition['CarbohydrateContent']:.1f}g")
-            
-            with col2:
-                st.write("**Micronutrients**")
-                st.write(f"• Total Sodium: {total_nutrition['SodiumContent']:.1f}mg")
-                st.write(f"• Total Cholesterol: {total_nutrition['CholesterolContent']:.1f}mg")
-                st.write(f"• Total Saturated Fat: {total_nutrition['SaturatedFatContent']:.1f}g")
-                st.write(f"• Total Sugar: {total_nutrition['SugarContent']:.1f}g")
-            
-            # Visualization Section
-            st.write("### 📈 Nutritional Visualizations")
-            
-            # Create nutrient distribution plot
-            fig1 = create_nutrient_distribution_plot(selected_recipes)
-            st.pyplot(fig1)
-            
-            # Create calories summary plot
-            fig2 = create_calories_summary_plot(selected_recipes)
-            st.pyplot(fig2)
-            
-            # Pie Chart for Macronutrient Distribution
-            st.write("#### Macronutrient Distribution")
-            macronutrient_data = {
-                'Protein': total_nutrition['ProteinContent'],
-                'Fat': total_nutrition['FatContent'],
-                'Carbohydrates': total_nutrition['CarbohydrateContent']
-            }
-            
-            fig3, ax3 = plt.subplots(figsize=(8, 6))
-            ax3.pie(list(macronutrient_data.values()), 
-                    labels=list(macronutrient_data.keys()), 
-                    autopct='%1.1f%%', 
-                    startangle=90)
-            ax3.axis('equal')
-            plt.title('Macronutrient Distribution')
-            st.pyplot(fig3)
-        else:
-            st.warning("No recipes have been selected. Please go back to MyHealthMyFood page and select recipes.")
+    # Check if there are any selected recipes
+    if 'selected_recipe_indices' not in st.session_state or not st.session_state.selected_recipe_indices:
+        st.warning("No recipes have been selected yet. Please go back to MyHealthMyFood page and select some recipes.")
+        return
     
-    # Add this to your main Streamlit app routing
-    if page == "🍽️ Recipe Selection":
-        recipe_selection_page()
+    # If recipes were selected, retrieve them from the previous page
+    if 'current_recommendations' in st.session_state and not st.session_state.current_recommendations.empty:
+        # Filter only the selected recipes
+        selected_indices = st.session_state.selected_recipe_indices
+        selected_recipes = st.session_state.current_recommendations.loc[list(selected_indices)]
         
+        # Display selected recipes
+        st.write("### 📋 Selected Recipes")
+        for idx, recipe in selected_recipes.iterrows():
+            st.write(f"• {recipe['Name']}")
+        
+        # Total Nutrition Breakdown
+        st.write("### 📊 Nutrition Analysis")
+        total_nutrition = selected_recipes.agg({
+            'Calories': 'sum',
+            'ProteinContent': 'sum',
+            'FatContent': 'sum',
+            'CarbohydrateContent': 'sum',
+            'SodiumContent': 'sum',
+            'CholesterolContent': 'sum',
+            'SaturatedFatContent': 'sum',
+            'SugarContent': 'sum'
+        })
+        
+        # Nutrition Summary
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write("**Macronutrients**")
+            st.write(f"• Total Calories: {total_nutrition['Calories']:.1f}")
+            st.write(f"• Total Protein: {total_nutrition['ProteinContent']:.1f}g")
+            st.write(f"• Total Fat: {total_nutrition['FatContent']:.1f}g")
+            st.write(f"• Total Carbohydrates: {total_nutrition['CarbohydrateContent']:.1f}g")
+        
+        with col2:
+            st.write("**Micronutrients**")
+            st.write(f"• Total Sodium: {total_nutrition['SodiumContent']:.1f}mg")
+            st.write(f"• Total Cholesterol: {total_nutrition['CholesterolContent']:.1f}mg")
+            st.write(f"• Total Saturated Fat: {total_nutrition['SaturatedFatContent']:.1f}g")
+            st.write(f"• Total Sugar: {total_nutrition['SugarContent']:.1f}g")
+        
+        # Visualization Section
+        st.write("### 📈 Nutritional Visualizations")
+        
+        # Nutrient Distribution Plot
+        fig1 = create_nutrient_distribution_plot(selected_recipes)
+        st.pyplot(fig1)
+        
+        # Calories Summary Plot
+        fig2 = create_calories_summary_plot(selected_recipes)
+        st.pyplot(fig2)
+        
+        # Macronutrient Distribution Pie Chart
+        st.write("#### Macronutrient Distribution")
+        macronutrient_data = {
+            'Protein': total_nutrition['ProteinContent'],
+            'Fat': total_nutrition['FatContent'],
+            'Carbohydrates': total_nutrition['CarbohydrateContent']
+        }
+        
+        fig3, ax3 = plt.subplots(figsize=(8, 6))
+        ax3.pie(list(macronutrient_data.values()), 
+                labels=list(macronutrient_data.keys()), 
+                autopct='%1.1f%%', 
+                startangle=90)
+        ax3.axis('equal')
+        plt.title('Macronutrient Distribution')
+        st.pyplot(fig3)
+    
+    else:
+        st.warning("No recipes have been selected. Please go back to MyHealthMyFood page and select recipes.")
+
+# In your main Streamlit app routing
+if page == "🍽️ Recipe Selection":
+    recipe_selection_page()
 #Weightloss prediction
 elif page == "⚖️Weight Loss Prediction":
     st.title("⚖️Weight Loss Prediction Calculator")
