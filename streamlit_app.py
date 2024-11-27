@@ -406,24 +406,18 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         Returns:
         pd.DataFrame: Selected recipes
         """
-        # Initialize session state for selections and recommendations
-        if 'current_recommendations' not in st.session_state:
-            st.session_state.current_recommendations = None
+        # Initialize session state for selections if not already exists
+        if 'selected_recipes' not in st.session_state:
+            st.session_state.selected_recipes = []
         
-        if 'selected_recipe_indices' not in st.session_state:
-            st.session_state.selected_recipe_indices = set()
-    
-        # Store new recommendations only if they are provided
-        if recommendations is not None and not recommendations.empty:
-            st.session_state.current_recommendations = recommendations
+        if 'displayed_recommendations' not in st.session_state:
+            st.session_state.displayed_recommendations = recommendations
         
-        # Always use recommendations from session state
-        current_recommendations = st.session_state.current_recommendations
+        current_recommendations = st.session_state.displayed_recommendations
         
         if current_recommendations is not None and not current_recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
-                
-            selected_recipes = []
+            
             for idx, row in current_recommendations.iterrows():
                 unique_key = f'recipe_select_{key_prefix}_{idx}'
                 
@@ -433,9 +427,10 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 # Checkbox in first column
                 with col1:
                     is_selected = st.checkbox(
-                        "",  # Empty label as we're putting it next to the expander
+                        "",  # Empty label 
                         key=unique_key,
-                        value=idx in st.session_state.selected_recipe_indices
+                        # Check if this recipe is already in selected recipes
+                        value=any(row['Name'] == selected_row['Name'] for selected_row in st.session_state.selected_recipes)
                     )
                 
                 # Expander in second column
@@ -443,10 +438,15 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                     with st.expander(f"📗 {row['Name']}"):
                         # Update selection state
                         if is_selected:
-                            st.session_state.selected_recipe_indices.add(idx)
-                            selected_recipes.append(row)
+                            # Only add if not already in selected_recipes
+                            if not any(row['Name'] == selected_row['Name'] for selected_row in st.session_state.selected_recipes):
+                                st.session_state.selected_recipes.append(row)
                         else:
-                            st.session_state.selected_recipe_indices.discard(idx)
+                            # Remove from selected_recipes if unchecked
+                            st.session_state.selected_recipes = [
+                                selected_row for selected_row in st.session_state.selected_recipes 
+                                if selected_row['Name'] != row['Name']
+                            ]
                         
                         # Display recipe details
                         col1, col2 = st.columns(2)
@@ -484,9 +484,9 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                             st.write(f"{i}. {step}")
             
             # Prepare selected recipes
-            if selected_recipes:
+            if st.session_state.selected_recipes:
                 st.write("### 🍽️ Selected Recipes")
-                selected_df = pd.DataFrame(selected_recipes)
+                selected_df = pd.DataFrame(st.session_state.selected_recipes)
                 for name in selected_df['Name']:
                     st.write(f"• {name}")
                 
@@ -499,7 +499,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                     fig2 = create_calories_summary_plot(selected_df)
                     st.pyplot(fig2)
         
-            return current_recommendations
+        return current_recommendations
         else:
             if not st.session_state.get('current_recommendations'):
                 st.warning("No recommendations found. Please try different inputs.")
@@ -547,8 +547,8 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             st.warning("No recommendations found. Please try different inputs.")
     
     # Update the reshuffle button section similarly:
-    if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'all_recommendations_cache'):
-        if st.session_state.all_recommendations_cache is not None:
+    if st.button("Reshuffle Recommendations"):
+        if hasattr(st.session_state, 'all_recommendations_cache') and st.session_state.all_recommendations_cache is not None:
             # Get all recommendations excluding previously shown ones
             remaining_recommendations = st.session_state.all_recommendations_cache[
                 ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
@@ -557,14 +557,21 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             if not remaining_recommendations.empty:
                 # Get next 5 recommendations
                 new_recommendations = remaining_recommendations.head(5)
+                
+                # Update displayed recommendations in session state
+                st.session_state.displayed_recommendations = new_recommendations
+                
                 # Update shown recommendations
                 st.session_state.previous_recommendations.update(new_recommendations.index.tolist())
-                # Display new recommendations
-                display_recommendations_with_selection(new_recommendations)
+                
+                # Rerun to refresh the page with new recommendations
+                st.experimental_rerun()
             else:
                 st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
         else:
             st.warning("Please get initial recommendations first.")
+
+
         
 #Weightloss prediction
 elif page == "⚖️Weight Loss Prediction":
