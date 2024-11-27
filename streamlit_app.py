@@ -358,12 +358,7 @@ def render_readme_page():
 if page == "ReadMe 📖":
     render_readme_page()
 
-if 'recommendations' not in st.session_state:
-    st.session_state.recommendations = None
-if 'selected_recipes' not in st.session_state:
-    st.session_state.selected_recipes = set()
-if 'all_recommendations_cache' not in st.session_state:
-    st.session_state.all_recommendations_cache = None
+
 
 # Streamlit UI (Recommendation Page)
 if page == "🍅🧀MyHealthMyFood🥑🥬":
@@ -371,6 +366,12 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
 
     if 'previous_recommendations' not in st.session_state:
         st.session_state.previous_recommendations = set()
+    if 'recommendations' not in st.session_state:
+        st.session_state.recommendations = None
+    if 'selected_recipes' not in st.session_state:
+        st.session_state.selected_recipes = set()
+    if 'all_recommendations_cache' not in st.session_state:
+        st.session_state.all_recommendations_cache = None
 
     if df is not None and models is not None:
         # User inputs
