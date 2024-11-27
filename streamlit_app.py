@@ -526,8 +526,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             display_recommendations_with_selection(recommendations.head(5))
         else:
             st.warning("No recommendations found. Please try different inputs.")
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
+
         
         # Store all recommendations in cache for reshuffling
         if not recommendations.empty:
