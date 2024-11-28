@@ -395,6 +395,8 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         steps = [step.strip().strip('"') for step in instructions.split('",')]
         return steps
 
+ import matplotlib.pyplot as plt
+
     def display_recommendations_with_selection(recommendations, key_prefix=''):
         """
         Display recommendations with checkboxes next to expander headers
@@ -412,7 +414,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         
         if 'selected_recipe_indices' not in st.session_state:
             st.session_state.selected_recipe_indices = set()
-    
+        
         # Store new recommendations only if they are provided
         if recommendations is not None and not recommendations.empty:
             st.session_state.current_recommendations = recommendations
@@ -483,27 +485,61 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                         for i, step in enumerate(instructions, 1):
                             st.write(f"{i}. {step}")
             
-            # Prepare selected recipes
-            if selected_recipes:
-                st.write("### 🍽️ Selected Recipes")
-                selected_df = pd.DataFrame(selected_recipes)
-                for name in selected_df['Name']:
-                    st.write(f"• {name}")
-                
-                if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
-                    st.write("### 🍽️ Nutritional Content Distribution")
-                    fig1 = create_nutrient_distribution_plot(selected_df)
-                    st.pyplot(fig1)
-                    
-                    st.write("### 🔢 Calories Breakdown")
-                    fig2 = create_calories_summary_plot(selected_df)
-                    st.pyplot(fig2)
-        
+            # Calculate and display total nutritional values of selected recipes
+            total_calories, total_nutrients = calculate_total_nutrition(selected_recipes)
+            st.write("### 🥗 Total Nutritional Information for Selected Recipes")
+            plot_total_nutrition(total_calories, total_nutrients)
+    
             return current_recommendations
         else:
             if not st.session_state.get('current_recommendations'):
                 st.warning("No recommendations found. Please try different inputs.")
             return pd.DataFrame()
+    
+    def calculate_total_nutrition(selected_recipes):
+        """
+        Calculate total calories and nutrient distribution of selected recipes
+        
+        Parameters:
+        selected_recipes (list): List of selected recipes as DataFrame rows
+        
+        Returns:
+        tuple: Total calories and dictionary of total nutrients
+        """
+        total_calories = sum(recipe['Calories'] for recipe in selected_recipes)
+        total_nutrients = {
+            'ProteinContent': sum(recipe['ProteinContent'] for recipe in selected_recipes),
+            'FatContent': sum(recipe['FatContent'] for recipe in selected_recipes),
+            'CarbohydrateContent': sum(recipe['CarbohydrateContent'] for recipe in selected_recipes),
+            'SodiumContent': sum(recipe['SodiumContent'] for recipe in selected_recipes),
+            'CholesterolContent': sum(recipe['CholesterolContent'] for recipe in selected_recipes),
+            'SaturatedFatContent': sum(recipe['SaturatedFatContent'] for recipe in selected_recipes),
+            'SugarContent': sum(recipe['SugarContent'] for recipe in selected_recipes),
+        }
+        return total_calories, total_nutrients
+    
+    def plot_total_nutrition(total_calories, total_nutrients):
+        """
+        Plot total nutritional values of selected recipes
+        
+        Parameters:
+        total_calories (float): Total calories of selected recipes
+        total_nutrients (dict): Dictionary of total nutrients of selected recipes
+        """
+        labels = list(total_nutrients.keys())
+        values = list(total_nutrients.values())
+        
+        # Add calories to the list for plotting
+        labels.append('Calories')
+        values.append(total_calories)
+        
+        # Create bar chart
+        fig, ax = plt.subplots()
+        ax.barh(labels, values, color='skyblue')
+        ax.set_xlabel('Total Nutritional Values')
+        ax.set_title('Total Nutrition of Selected Recipes')
+        st.pyplot(fig)
+
             
     if st.button("Get Recommendations"):
         daily_calories = calculate_caloric_needs(gender, weight, height, age)
