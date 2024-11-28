@@ -542,11 +542,8 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             ]
             
             if not remaining_recommendations.empty:
-                # Get next 5 recommendations
                 new_recommendations = remaining_recommendations.head(5)
-                # Update shown recommendations
                 st.session_state.previous_recommendations.update(new_recommendations.index.tolist())
-                # Display new recommendations
                 display_recommendations_with_selection(new_recommendations)
             else:
                 st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
