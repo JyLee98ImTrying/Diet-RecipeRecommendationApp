@@ -399,16 +399,12 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
     import matplotlib.pyplot as plt
 
     def display_recommendations_with_selection(recommendations, key_prefix=''):
+        
         if 'current_recommendations' not in st.session_state:
-            st.session_state.current_recommendations = None
-    
-        if 'selected_recipe_indices' not in st.session_state:
-            st.session_state.selected_recipe_indices = set()
-    
-        if recommendations is not None and not recommendations.empty:
             st.session_state.current_recommendations = recommendations
-    
-        current_recommendations = st.session_state.current_recommendations
+            st.session_state.selected_recipe_indices = set()
+        else:
+            current_recommendations = st.session_state.current_recommendations
     
         if current_recommendations is not None and not current_recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
