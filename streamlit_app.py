@@ -234,7 +234,7 @@ def recommend_food(input_data, df, models, excluded_indices=None):
                                       'RecipeIngredientQuantities', 'RecipeIngredientParts']]
         
         if not result.empty:
-            st.write("\nRecommendation Statistics (per meal):")
+            st.write("\nAverage Statistics (per meal):")
             
             st.write(f"Average Calories: {result['Calories'].head().mean():.2f} kcal")
             st.write(f"Average Protein Content: {result['ProteinContent'].head().mean():.2f}g")
