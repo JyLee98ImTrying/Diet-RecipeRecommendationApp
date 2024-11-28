@@ -529,7 +529,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
     
         
         # Get initial recommendations
-        recommendations = display_recommendations_with_selection(input_features, df, models)
+        recommendations = recommend_food(input_features, df, models)
         
         # Store all recommendations in cache for reshuffling
         if not recommendations.empty:
