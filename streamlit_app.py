@@ -396,19 +396,12 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         steps = [step.strip().strip('"') for step in instructions.split('",')]
         return steps
 
-    import matplotlib.pyplot as plt
-
     def display_recommendations_with_selection(recommendations, key_prefix=''):
         if 'current_recommendations' not in st.session_state:
-            st.session_state.current_recommendations = None
-    
-        if 'selected_recipe_indices' not in st.session_state:
-            st.session_state.selected_recipe_indices = set()
-    
-        if recommendations is not None and not recommendations.empty:
             st.session_state.current_recommendations = recommendations
-    
-        current_recommendations = st.session_state.current_recommendations
+            st.session_state.selected_recipe_indices = set()
+        else:
+            current_recommendations = st.session_state.current_recommendations
     
         if current_recommendations is not None and not current_recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
@@ -468,8 +461,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
     
             return current_recommendations
         else:
-            if not st.session_state.get('current_recommendations'):
-                st.warning("No recommendations found. Please try different inputs.")
+            st.warning("No recommendations found. Please try different inputs.")
             return pd.DataFrame()
     
     def calculate_total_nutrition(selected_recipes):
@@ -484,7 +476,8 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             'SugarContent': sum(recipe['SugarContent'] for recipe in selected_recipes),
         }
         return total_calories, total_nutrients
-    
+
+    # Function to plot total nutrition
     def plot_total_nutrition(total_calories, total_nutrients):
         labels = list(total_nutrients.keys())
         values = list(total_nutrients.values())
@@ -497,7 +490,6 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         ax.set_xlabel('Total Nutritional Values')
         ax.set_title('Total Nutrition of Selected Recipes')
         st.pyplot(fig)
-
 
             
     if st.button("Get Recommendations"):
