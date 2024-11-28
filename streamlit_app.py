@@ -341,13 +341,22 @@ if 'all_recommendations_cache' not in st.session_state:
 
 import matplotlib.pyplot as plt
 
-# Function to initialize session state for checkboxes
-def initialize_checkbox_state(recommendations, key_prefix=''):
-    for idx in recommendations.index:
-        unique_key = f'recipe_select_{key_prefix}_{idx}'
-        if unique_key not in st.session_state:
-            st.session_state[unique_key] = False
+# Function to initialize or retrieve session state for storing selected recipes
+def initialize_session_states():
+    if 'all_recommendations_cache' not in st.session_state:
+        st.session_state.all_recommendations_cache = None
+    if 'selected_recipes' not in st.session_state:
+        st.session_state.selected_recipes = set()
+    if 'current_displayed_recommendations' not in st.session_state:
+        st.session_state.current_displayed_recommendations = None
 
+# Function to handle checkbox changes
+def handle_checkbox_change(idx, key):
+    if st.session_state[key]:
+        st.session_state.selected_recipes.add(idx)
+    else:
+        st.session_state.selected_recipes.discard(idx)
+        
 # Function to handle checkbox changes
 def handle_checkbox_change(idx, key):
     if st.session_state[key]:
@@ -362,7 +371,7 @@ def display_recommendations_with_selection(recommendations, key_prefix=''):
 
     for idx, row in recommendations.iterrows():
         unique_key = f'recipe_select_{key_prefix}_{idx}'
-        is_selected = st.session_state[unique_key]
+        is_selected = st.session_state.get(unique_key, False)
 
         col1, col2 = st.columns([1, 11])
         with col1:
@@ -398,10 +407,9 @@ def display_recommendations_with_selection(recommendations, key_prefix=''):
                 for i, step in enumerate(instructions, 1):
                     st.write(f"{i}. {step}")
 
-    total_calories, total_nutrients = calculate_total_nutrition(selected_recipes)
+    total_calories, total_nutrients = calculate_total_nutrition([recommendations.loc[i] for i in st.session_state.selected_recipes])
     st.write("### 🥗 Total Nutritional Information for Selected Recipes")
     plot_total_nutrition(total_calories, total_nutrients)
-    return recommendations
 
 # Function to calculate total nutrition
 def calculate_total_nutrition(selected_recipes):
@@ -447,6 +455,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             wellness_goal = st.selectbox("Select your wellness goal", 
                                        ["Maintain Weight", "Lose Weight", "Muscle Gain"])
 
+    initialize_session_states() 
     if st.button("Get Recommendations"):
         daily_calories = calculate_caloric_needs(gender, weight, height, age)
         protein_grams = 0.8 * weight
@@ -482,7 +491,10 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             display_recommendations_with_selection(recommendations.head(5))
         else:
             st.warning("No recommendations found. Please try different inputs.")
-
+    elif 'current_displayed_recommendations' in st.session_state:
+    # Re-render cached recommendations on rerun
+    display_recommendations_with_selection(st.session_state.current_displayed_recommendations)
+    
     if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'all_recommendations_cache'):
         if st.session_state.all_recommendations_cache is not None:
             remaining_recommendations = st.session_state.all_recommendations_cache[
@@ -497,6 +509,10 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
         else:
             st.warning("Please get initial recommendations first.")
+            
+    elif 'current_displayed_recommendations' in st.session_state:
+    # Re-render cached recommendations on rerun
+    display_recommendations_with_selection(st.session_state.current_displayed_recommendations)
 
 #Weightloss prediction
 elif page == "⚖️Weight Loss Prediction":
