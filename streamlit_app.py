@@ -350,12 +350,12 @@ def initialize_session_states():
     if 'current_displayed_recommendations' not in st.session_state:
         st.session_state.current_displayed_recommendations = None
 
-# Function to handle checkbox changes
-def handle_checkbox_change(idx, key):
-    if st.session_state[key]:
-        st.session_state.selected_recipes.add(idx)
-    else:
-        st.session_state.selected_recipes.discard(idx)
+# Function to initialize session state for checkboxes
+def initialize_checkbox_state(recommendations, key_prefix=''):
+    for idx in recommendations.index:
+        unique_key = f'recipe_select_{key_prefix}_{idx}'
+        if unique_key not in st.session_state:
+            st.session_state[unique_key] = False
         
 # Function to handle checkbox changes
 def handle_checkbox_change(idx, key):
