@@ -375,20 +375,21 @@ def display_recommendations_with_selection(recommendations, key_prefix=''):
     selected_recipes = []
     for idx, row in recommendations.iterrows():
         unique_key = f'recipe_select_{key_prefix}_{idx}'
+
         if unique_key not in st.session_state:
             st.session_state[unique_key] = False
-        
-        col1, col2 = st.columns([1, 11])
-        with col1:
-            is_selected = st.checkbox(
-                "", key=unique_key, value=st.session_state[unique_key]
-            )
-            st.session_state[unique_key] = is_selected
 
+        col1, col2 = st.columns([1, 11])
+        is_selected = col1.checkbox("", key=unique_key, value=st.session_state[unique_key])
+        
+        if is_selected:
+            st.session_state[unique_key] = True
+            selected_recipes.append(row)
+        else:
+            st.session_state[unique_key] = False
+        
         with col2:
             with st.expander(f"📗 {row['Name']}"):
-                if is_selected:
-                    selected_recipes.append(row)
                 col1, col2 = st.columns(2)
                 with col1:
                     st.write("**📊 Nutritional Information**")
@@ -421,6 +422,7 @@ def display_recommendations_with_selection(recommendations, key_prefix=''):
     plot_total_nutrition(total_calories, total_nutrients)
     return recommendations
 
+# Function to calculate total nutrition
 def calculate_total_nutrition(selected_recipes):
     total_calories = sum(recipe['Calories'] for recipe in selected_recipes)
     total_nutrients = {
@@ -434,6 +436,7 @@ def calculate_total_nutrition(selected_recipes):
     }
     return total_calories, total_nutrients
 
+# Function to plot total nutrition
 def plot_total_nutrition(total_calories, total_nutrients):
     labels = list(total_nutrients.keys())
     values = list(total_nutrients.values())
