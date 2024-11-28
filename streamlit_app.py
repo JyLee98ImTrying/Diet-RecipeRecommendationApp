@@ -371,12 +371,14 @@ if 'all_recommendations_cache' not in st.session_state:
 import matplotlib.pyplot as plt
 
 # Callback function to handle checkbox changes
-def update_selected_recipes():
-    st.session_state.selected_recipes = [
-        idx for idx in st.session_state.all_recommendations_cache.index
-        if st.session_state[f"recipe_select_{idx}"]
-    ]
+# Callback function to handle checkbox changes
+def update_selected_recipes(idx, key):
+    if st.session_state[key]:
+        st.session_state.selected_recipes.add(idx)
+    else:
+        st.session_state.selected_recipes.discard(idx)
 
+# Function to display recommendations with selections
 def display_recommendations_with_selection(recommendations, key_prefix=''):
     st.session_state.current_recommendations = recommendations
     selected_recipes = []
@@ -390,14 +392,14 @@ def display_recommendations_with_selection(recommendations, key_prefix=''):
         col1, col2 = st.columns([1, 11])
 
         with col1:
-            is_selected = st.checkbox(
+            st.checkbox(
                 "", key=unique_key, value=st.session_state[unique_key],
-                on_change=update_selected_recipes
+                on_change=update_selected_recipes, args=(idx, unique_key)
             )
 
         with col2:
             with st.expander(f"📗 {row['Name']}"):
-                if is_selected:
+                if st.session_state[unique_key]:
                     selected_recipes.append(row)
 
                 col1, col2 = st.columns(2)
@@ -513,7 +515,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         if not recommendations.empty:
             st.session_state.all_recommendations_cache = recommendations
             st.session_state.previous_recommendations = set(recommendations.index[:5].tolist())
-            st.session_state.selected_recipes = []
+            st.session_state.selected_recipes = set()
             display_recommendations_with_selection(recommendations.head(5))
         else:
             st.warning("No recommendations found. Please try different inputs.")
