@@ -11,7 +11,6 @@ from itertools import zip_longest
 import plotly.express as px
 import xgboost as xgb
 import datetime
-import time
 
 st.cache_data.clear()
 
@@ -354,11 +353,19 @@ def render_readme_page():
     # Optional: Add a visual separator or additional guidance
     st.markdown("---")
     st.info("Explore recipes, discover nutrition, and enjoy your culinary journey!")
-    
+
+# If this is part of a multi-page Streamlit app
 if page == "ReadMe 📖":
     render_readme_page()
 
-
+if 'recommendations' not in st.session_state:
+    st.session_state.recommendations = None
+if 'selected_recipes' not in st.session_state:
+    st.session_state.selected_recipes = set()
+if 'previous_recommendations' not in st.session_state:
+    st.session_state.previous_recommendations = set()
+if 'all_recommendations_cache' not in st.session_state:
+    st.session_state.all_recommendations_cache = None
 
 # Streamlit UI (Recommendation Page)
 if page == "🍅🧀MyHealthMyFood🥑🥬":
@@ -558,7 +565,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
         else:
             st.warning("Please get initial recommendations first.")
-        
+
 #Weightloss prediction
 elif page == "⚖️Weight Loss Prediction":
     st.title("⚖️Weight Loss Prediction Calculator")
