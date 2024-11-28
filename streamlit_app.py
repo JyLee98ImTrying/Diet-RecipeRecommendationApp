@@ -55,8 +55,9 @@ def format_recipe_instructions(instructions):
     """Format recipe instructions from c() format to numbered list."""
     if not isinstance(instructions, str):
         return []
-    # Clean up wrappers and ","
+    # Remove c() wrapper and split by commas
     instructions = instructions.replace('c(', '').replace(')', '')
+    # Split by '", ' and clean up remaining quotes
     steps = [step.strip().strip('"') for step in instructions.split('",')]
     return steps
 
@@ -528,7 +529,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
     
         
         # Get initial recommendations
-        recommendations = recommend_food(input_features, df, models)
+        recommendations = display_recommendations_with_selection(input_features, df, models)
         
         # Store all recommendations in cache for reshuffling
         if not recommendations.empty:
