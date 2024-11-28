@@ -395,8 +395,6 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         steps = [step.strip().strip('"') for step in instructions.split('",')]
         return steps
 
- import matplotlib.pyplot as plt
-
     def display_recommendations_with_selection(recommendations, key_prefix=''):
         """
         Display recommendations with checkboxes next to expander headers
