@@ -383,11 +383,15 @@ def display_recommendations_with_selection(recommendations, key_prefix=''):
     
     for idx, row in st.session_state.current_recommendations.iterrows():
         unique_key = f'recipe_select_{key_prefix}_{idx}'
+        
+        if unique_key not in st.session_state:
+            st.session_state[unique_key] = False
+        
         col1, col2 = st.columns([1, 11])
 
         with col1:
             is_selected = st.checkbox(
-                "", key=unique_key, value=idx in st.session_state.selected_recipes, 
+                "", key=unique_key, value=st.session_state[unique_key],
                 on_change=update_selected_recipes
             )
 
@@ -461,6 +465,7 @@ def plot_total_nutrition(total_calories, total_nutrients):
     ax.set_title('Total Nutrition of Selected Recipes')
     st.pyplot(fig)
 
+# Example usage in Streamlit UI
 if page == "🍅🧀MyHealthMyFood🥑🥬":
     st.title('🍅🧀MyHealthMyFood🥑🥬')
 
