@@ -364,18 +364,6 @@ if page == "ReadMe 📖":
 if page == "🍅🧀MyHealthMyFood🥑🥬":
     st.title('🍅🧀MyHealthMyFood🥑🥬')
 
-    # Initialize session state variables
-    if 'current_recommendations' not in st.session_state:
-        st.session_state.current_recommendations = pd.DataFrame()
-    if 'all_recommendations_cache' not in st.session_state:
-        st.session_state.all_recommendations_cache = pd.DataFrame()
-    if 'previous_recommendations' not in st.session_state:
-        st.session_state.previous_recommendations = set()
-    if 'selected_recipe_names' not in st.session_state:
-        st.session_state.selected_recipe_names = []
-    if 'recommendations_generated' not in st.session_state:
-        st.session_state.recommendations_generated = False
-
     if df is not None and models is not None:
         # User inputs
         gender = st.selectbox("Select your gender", ["Female", "Male"])
@@ -401,187 +389,168 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         return steps
 
     def display_recommendations_with_selection(recommendations, key_prefix=''):
-        # Initialize session state variables
+        """
+        Display recommendations with checkboxes next to expander headers
+        
+        Parameters:
+        recommendations (pd.DataFrame): DataFrame of recipe recommendations
+        key_prefix (str): Unique prefix for checkbox keys to avoid collision
+        
+        Returns:
+        pd.DataFrame: Selected recipes
+        """
+        # Initialize session state for selections and recommendations
         if 'current_recommendations' not in st.session_state:
-            st.session_state.current_recommendations = pd.DataFrame()
-        if 'all_recommendations_cache' not in st.session_state:
-            st.session_state.all_recommendations_cache = pd.DataFrame()
-        if 'previous_recommendations' not in st.session_state:
-            st.session_state.previous_recommendations = set()
-        if 'selected_recipe_names' not in st.session_state:
-            st.session_state.selected_recipe_names = []
-        if 'recommendations_generated' not in st.session_state:
-            st.session_state.recommendations_generated = False
+            st.session_state.current_recommendations = None
+        
+        if 'selected_recipe_indices' not in st.session_state:
+            st.session_state.selected_recipe_indices = set()
     
-        if df is not None and models is not None:
-            # User inputs
-            gender = st.selectbox("Select your gender", ["Female", "Male"])
-            weight = st.number_input("Enter your weight (kg)", min_value=30, max_value=200, value=70)
-            height = st.number_input("Enter your height (cm)", min_value=100, max_value=250, value=160)
-            age = st.number_input("Enter your age (years)", min_value=1, max_value=100, value=30)
-            health_condition = st.selectbox("Select your health condition", 
-                                          ["No Non-Communicable Disease", "Diabetic", "High Blood Pressure", "High Cholesterol"])
-            
-            wellness_goal = None
-            if health_condition == "No Non-Communicable Disease":
-                wellness_goal = st.selectbox("Select your wellness goal", 
-                                           ["Maintain Weight", "Lose Weight", "Muscle Gain"])
+        # Store new recommendations only if they are provided
+        if recommendations is not None and not recommendations.empty:
+            st.session_state.current_recommendations = recommendations
         
-        # [Rest of the existing helper functions remain the same]
-    
-        if st.button("Get Recommendations"):
-            daily_calories = calculate_caloric_needs(gender, weight, height, age)
-            protein_grams = 0.8 * weight
-            fat_calories = 0.25 * daily_calories
-            carb_calories = 0.55 * daily_calories
-            fat_grams = fat_calories / 9
-            carb_grams = carb_calories / 4
-            meal_fraction = 0.3
-            
-            input_features = np.array([
-                daily_calories * meal_fraction,
-                protein_grams * meal_fraction,
-                fat_grams * meal_fraction,
-                carb_grams * meal_fraction,
-                2000 * meal_fraction,
-                200 * meal_fraction,
-                (fat_grams * 0.01) * meal_fraction,
-                (carb_grams * 0.03) * meal_fraction,
-                (carb_grams * 0.01) * meal_fraction
-            ]).reshape(1, -1)
-                    
-            # Store in session state
-            st.session_state.current_input_features = input_features
-            st.session_state.current_wellness_goal = wellness_goal
-            st.session_state.current_weight = weight
-            st.session_state.current_health_condition = health_condition
+        # Always use recommendations from session state
+        current_recommendations = st.session_state.current_recommendations
         
-            # Get initial recommendations
-            recommendations = recommend_food(input_features, df, models)
-            
-            # Store all recommendations in cache for reshuffling
-            if not recommendations.empty:
-                st.session_state.all_recommendations_cache = recommendations
-                st.session_state.current_recommendations = recommendations
-                # Store the indices of shown recommendations
-                st.session_state.previous_recommendations = set(recommendations.index[:5].tolist())
-                # Set recommendations as generated
-                st.session_state.recommendations_generated = True
-                # Display only top 5 recommendations
-                display_recommendations_with_selection(recommendations.head(5))
-            else:
-                st.warning("No recommendations found. Please try different inputs.")
-                st.session_state.recommendations_generated = False
-        
-        # Reshuffle button
-        if st.button("Reshuffle Recommendations"):
-            if st.session_state.get('recommendations_generated', False):
-                # Get all recommendations excluding previously shown ones
-                remaining_recommendations = st.session_state.all_recommendations_cache[
-                    ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
-                ]
+        if current_recommendations is not None and not current_recommendations.empty:
+            st.write("### 🍳 Recommended Food Items (Single Serving)")
                 
-                if not remaining_recommendations.empty:
-                    # Get next 5 recommendations
-                    new_recommendations = remaining_recommendations.head(5)
-                    # Update shown recommendations
-                    st.session_state.previous_recommendations.update(new_recommendations.index.tolist())
-                    # Update current recommendations
-                    st.session_state.current_recommendations = new_recommendations
-                    # Display new recommendations
-                    display_recommendations_with_selection(new_recommendations)
-                else:
-                    st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
+            selected_recipes = []
+            for idx, row in current_recommendations.iterrows():
+                unique_key = f'recipe_select_{key_prefix}_{idx}'
+                
+                # Create columns for checkbox and expander
+                col1, col2 = st.columns([1, 11])
+                
+                # Checkbox in first column
+                with col1:
+                    is_selected = st.checkbox(
+                        "",  # Empty label as we're putting it next to the expander
+                        key=unique_key,
+                        value=idx in st.session_state.selected_recipe_indices
+                    )
+                
+                # Expander in second column
+                with col2:
+                    with st.expander(f"📗 {row['Name']}"):
+                        # Update selection state
+                        if is_selected:
+                            st.session_state.selected_recipe_indices.add(idx)
+                            selected_recipes.append(row)
+                        else:
+                            st.session_state.selected_recipe_indices.discard(idx)
+                        
+                        # Display recipe details
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            st.write("**📊 Nutritional Information**")
+                            st.write(f"• Calories: {row['Calories']:.1f}")
+                            st.write(f"• Protein: {row['ProteinContent']:.1f}g")
+                            st.write(f"• Fat: {row['FatContent']:.1f}g")
+                            st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
+                        
+                        with col2:
+                            st.write("**🔍 Additional Details**")
+                            st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
+                            st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
+                            st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
+                            st.write(f"• Sugar: {row['SugarContent']:.1f}g")
+                        
+                        # Ingredients section
+                        st.write("**🥗 Ingredients**")
+                        ingredients = combine_ingredients(
+                            row.get('RecipeIngredientQuantities', ''), 
+                            row.get('RecipeIngredientParts', '')
+                        )
+                        if ingredients:
+                            for ingredient in ingredients:
+                                st.write(f"• {ingredient}")
+                        else:
+                            st.write("No ingredient information available")
+                        
+                        # Recipe Instructions
+                        st.write("**👩‍🍳 Recipe Instructions**")
+                        instructions = format_recipe_instructions(row['RecipeInstructions'])
+                        for i, step in enumerate(instructions, 1):
+                            st.write(f"{i}. {step}")
+            
+            # Prepare selected recipes
+            if selected_recipes:
+                st.write("### 🍽️ Selected Recipes")
+                selected_df = pd.DataFrame(selected_recipes)
+                for name in selected_df['Name']:
+                    st.write(f"• {name}")
+                
+                if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
+                    st.write("### 🍽️ Nutritional Content Distribution")
+                    fig1 = create_nutrient_distribution_plot(selected_df)
+                    st.pyplot(fig1)
+                    
+                    st.write("### 🔢 Calories Breakdown")
+                    fig2 = create_calories_summary_plot(selected_df)
+                    st.pyplot(fig2)
+        
+            return current_recommendations
+        else:
+            if not st.session_state.get('current_recommendations'):
+                st.warning("No recommendations found. Please try different inputs.")
+            return pd.DataFrame()
+            
+    if st.button("Get Recommendations"):
+        daily_calories = calculate_caloric_needs(gender, weight, height, age)
+        protein_grams = 0.8 * weight
+        fat_calories = 0.25 * daily_calories
+        carb_calories = 0.55 * daily_calories
+        fat_grams = fat_calories / 9
+        carb_grams = carb_calories / 4
+        meal_fraction = 0.3
+        
+        input_features = np.array([
+            daily_calories * meal_fraction,
+            protein_grams * meal_fraction,
+            fat_grams * meal_fraction,
+            carb_grams * meal_fraction,
+            2000 * meal_fraction,
+            200 * meal_fraction,
+            (fat_grams * 0.01) * meal_fraction,
+            (carb_grams * 0.03) * meal_fraction,
+            (carb_grams * 0.01) * meal_fraction
+        ]).reshape(1, -1)
+                
+        # Store in session state
+        st.session_state.current_input_features = input_features
+        st.session_state.current_wellness_goal = wellness_goal
+        st.session_state.current_weight = weight
+        st.session_state.current_health_condition = health_condition
+    
+        recommendations = recommend_food(input_features, df, models)
+        
+        # Store all recommendations in cache for reshuffling
+        if not recommendations.empty:
+            st.session_state.all_recommendations_cache = recommendations
+            st.session_state.previous_recommendations.update(recommendations.index[:5].tolist())
+            display_recommendations_with_selection(recommendations.head(5))
+        else:
+            st.warning("No recommendations found. Please try different inputs.")
+    
+    # Update the reshuffle button section similarly:
+    if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'all_recommendations_cache'):
+        if st.session_state.all_recommendations_cache is not None:
+            # Get all recommendations excluding previously shown ones
+            remaining_recommendations = st.session_state.all_recommendations_cache[
+                ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
+            ]
+            
+            if not remaining_recommendations.empty:
+                new_recommendations = remaining_recommendations.head(5)
+                st.session_state.previous_recommendations.update(new_recommendations.index.tolist())
+                display_recommendations_with_selection(new_recommendations)
             else:
-                st.warning("Please get initial recommendations first.")
-
-        def recipe_selection_page():
-            st.title('🍽️ Recipe Selection and Nutrition Analysis')
-            
-            # Validation: Check if recommendations have been generated
-            if not st.session_state.get('recommendations_generated', False):
-                st.warning("Please generate recommendations on the MyHealthMyFood page first.")
-                if st.button("Go to MyHealthMyFood Page"):
-                    st.switch_page("pages/myhealthmyfood.py")
-                return
-        
-            # Check if any recipes have been selected
-            if not hasattr(st.session_state, 'selected_recipe_indices') or not st.session_state.selected_recipe_indices:
-                st.warning("No recipes have been selected. Please select recipes on the MyHealthMyFood page.")
-                if st.button("Go Back to Recommendations"):
-                    st.switch_page("pages/myhealthmyfood.py")
-                return
-        
-            # Retrieve selected recipes from current recommendations
-            selected_indices = st.session_state.selected_recipe_indices
-            selected_recipes = st.session_state.current_recommendations.loc[list(selected_indices)]
-            
-            # Display selected recipes
-            st.write("### 📋 Selected Recipes")
-            for idx, recipe in selected_recipes.iterrows():
-                st.write(f"• {recipe['Name']}")
-            
-            # Total Nutrition Breakdown
-            st.write("### 📊 Nutrition Analysis")
-            total_nutrition = selected_recipes.agg({
-                'Calories': 'sum',
-                'ProteinContent': 'sum',
-                'FatContent': 'sum',
-                'CarbohydrateContent': 'sum',
-                'SodiumContent': 'sum',
-                'CholesterolContent': 'sum',
-                'SaturatedFatContent': 'sum',
-                'SugarContent': 'sum'
-            })
-            
-            # Nutrition Summary
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.write("**Macronutrients**")
-                st.write(f"• Total Calories: {total_nutrition['Calories']:.1f}")
-                st.write(f"• Total Protein: {total_nutrition['ProteinContent']:.1f}g")
-                st.write(f"• Total Fat: {total_nutrition['FatContent']:.1f}g")
-                st.write(f"• Total Carbohydrates: {total_nutrition['CarbohydrateContent']:.1f}g")
-            
-            with col2:
-                st.write("**Micronutrients**")
-                st.write(f"• Total Sodium: {total_nutrition['SodiumContent']:.1f}mg")
-                st.write(f"• Total Cholesterol: {total_nutrition['CholesterolContent']:.1f}mg")
-                st.write(f"• Total Saturated Fat: {total_nutrition['SaturatedFatContent']:.1f}g")
-                st.write(f"• Total Sugar: {total_nutrition['SugarContent']:.1f}g")
-            
-            # Visualization Section
-            st.write("### 📈 Nutritional Visualizations")
-            
-            # Nutrient Distribution Plot
-            fig1 = create_nutrient_distribution_plot(selected_recipes)
-            st.pyplot(fig1)
-            
-            # Calories Summary Plot
-            fig2 = create_calories_summary_plot(selected_recipes)
-            st.pyplot(fig2)
-            
-            # Macronutrient Distribution Pie Chart
-            st.write("#### Macronutrient Distribution")
-            macronutrient_data = {
-                'Protein': total_nutrition['ProteinContent'],
-                'Fat': total_nutrition['FatContent'],
-                'Carbohydrates': total_nutrition['CarbohydrateContent']
-            }
-            
-            fig3, ax3 = plt.subplots(figsize=(8, 6))
-            ax3.pie(list(macronutrient_data.values()), 
-                    labels=list(macronutrient_data.keys()), 
-                    autopct='%1.1f%%', 
-                    startangle=90)
-            ax3.axis('equal')
-            plt.title('Macronutrient Distribution')
-            st.pyplot(fig3)
-        
-            # Add a button to go back to recommendations
-            if st.button("Back to Recommendations"):
-                st.switch_page("pages/myhealthmyfood.py")
+                st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
+        else:
+            st.warning("Please get initial recommendations first.")
         
 #Weightloss prediction
 elif page == "⚖️Weight Loss Prediction":
