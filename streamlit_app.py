@@ -370,9 +370,17 @@ if 'all_recommendations_cache' not in st.session_state:
 
 import matplotlib.pyplot as plt
 
-# Function to handle checkbox changes
-def update_selected_recipes(idx, unique_key):
-    if st.session_state[unique_key]:
+# Function to combine ingredient quantities and parts
+def combine_ingredients(quantities, parts):
+    if not quantities or not parts:
+        return []
+    quantities = quantities.split(',')
+    parts = parts.split(',')
+    return [f"{quantity.strip()} {part.strip()}" for quantity, part in zip(quantities, parts)]
+
+# Callback function to handle checkbox changes
+def update_selected_recipes(idx, key):
+    if st.session_state[key]:
         st.session_state.selected_recipes.add(idx)
     else:
         st.session_state.selected_recipes.discard(idx)
@@ -532,6 +540,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
         else:
             st.warning("Please get initial recommendations first.")
+
 
 
 #Weightloss prediction
