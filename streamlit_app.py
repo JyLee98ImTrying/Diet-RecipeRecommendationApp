@@ -352,10 +352,11 @@ def initialize_session_states():
 
 # Function to initialize session state for checkboxes
 def initialize_checkbox_state(recommendations, key_prefix=''):
-    for idx in recommendations.index:
-        unique_key = f'recipe_select_{key_prefix}_{idx}'
-        if unique_key not in st.session_state:
-            st.session_state[unique_key] = False
+    if recommendations is not None and not recommendations.empty:  # Ensure recommendations is valid
+        for idx in recommendations.index:
+            unique_key = f'recipe_select_{key_prefix}_{idx}'
+            if unique_key not in st.session_state:
+                st.session_state[unique_key] = False
         
 # Function to handle checkbox changes
 def handle_checkbox_change(idx, key):
