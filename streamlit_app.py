@@ -306,7 +306,7 @@ def create_calories_summary_plot(selected_recipes):
 
 # Sidebar for Page Navigation
 with st.sidebar.expander("Navigation", expanded=True):
-    page = st.radio("Go to:", ["ReadMe 📖", "🍅🧀MyHealthMyFood🥑🥬", "🍽️ Recipe Selection and Nutrition Analysis", "⚖️Weight Loss Prediction", "🔎Search for Recipes", "Recipe Data Visualization📊"])
+    page = st.radio("Go to:", ["ReadMe 📖", "🍅🧀MyHealthMyFood🥑🥬", "⚖️Weight Loss Prediction", "🔎Search for Recipes", "Recipe Data Visualization📊"])
 
 # Load data and models first
 df = load_data()
