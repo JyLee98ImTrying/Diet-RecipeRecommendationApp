@@ -493,7 +493,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             st.warning("No recommendations found. Please try different inputs.")
     elif 'current_displayed_recommendations' in st.session_state:
     # Re-render cached recommendations on rerun
-    display_recommendations_with_selection(st.session_state.current_displayed_recommendations)
+        display_recommendations_with_selection(st.session_state.current_displayed_recommendations)
     
     if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'all_recommendations_cache'):
         if st.session_state.all_recommendations_cache is not None:
@@ -512,7 +512,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             
     elif 'current_displayed_recommendations' in st.session_state:
     # Re-render cached recommendations on rerun
-    display_recommendations_with_selection(st.session_state.current_displayed_recommendations)
+        display_recommendations_with_selection(st.session_state.current_displayed_recommendations)
 
 #Weightloss prediction
 elif page == "⚖️Weight Loss Prediction":
