@@ -368,6 +368,8 @@ if 'previous_recommendations' not in st.session_state:
 if 'all_recommendations_cache' not in st.session_state:
     st.session_state.all_recommendations_cache = None
 
+import matplotlib.pyplot as plt
+
 def display_recommendations_with_selection(recommendations, key_prefix=''):
     if 'current_recommendations' not in st.session_state:
         st.session_state.current_recommendations = pd.DataFrame()
