@@ -370,10 +370,9 @@ if 'all_recommendations_cache' not in st.session_state:
 
 import matplotlib.pyplot as plt
 
-# Callback function to handle checkbox changes
-# Callback function to handle checkbox changes
-def update_selected_recipes(idx, key):
-    if st.session_state[key]:
+# Function to handle checkbox changes
+def update_selected_recipes(idx, unique_key):
+    if st.session_state[unique_key]:
         st.session_state.selected_recipes.add(idx)
     else:
         st.session_state.selected_recipes.discard(idx)
@@ -393,8 +392,7 @@ def display_recommendations_with_selection(recommendations, key_prefix=''):
 
         with col1:
             st.checkbox(
-                "", key=unique_key, value=st.session_state[unique_key],
-                on_change=update_selected_recipes, args=(idx, unique_key)
+                "", key=unique_key, on_change=update_selected_recipes, args=(idx, unique_key)
             )
 
         with col2:
