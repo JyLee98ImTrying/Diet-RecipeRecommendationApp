@@ -500,7 +500,19 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             st.warning("No recommendations found. Please try different inputs.")
 
     if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'all_recommendations_cache'):
-        if st.session_state
+        if st.session_state.all_recommendations_cache is not None:
+            remaining_recommendations = st.session_state.all_recommendations_cache[
+                ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
+            ]
+            
+            if not remaining_recommendations.empty:
+                new_recommendations = remaining_recommendations.head(5)
+                st.session_state.previous_recommendations.update(new_recommendations.index.tolist())
+                display_recommendations_with_selection(new_recommendations)
+            else:
+                st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
+        else:
+            st.warning("Please get initial recommendations first.")
 
 
 #Weightloss prediction
