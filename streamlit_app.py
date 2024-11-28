@@ -341,31 +341,38 @@ if 'all_recommendations_cache' not in st.session_state:
 
 import matplotlib.pyplot as plt
 
-# Function to display recommendations with selections
-def display_recommendations_with_selection(recommendations, key_prefix=''):
-    if 'selected_recipe_indices' not in st.session_state:
-        st.session_state.selected_recipe_indices = set()
-    if 'current_recommendations' not in st.session_state:
-        st.session_state.current_recommendations = recommendations
-
-    selected_recipes = []
-    for idx, row in recommendations.iterrows():
+# Function to initialize session state for checkboxes
+def initialize_checkbox_state(recommendations, key_prefix=''):
+    for idx in recommendations.index:
         unique_key = f'recipe_select_{key_prefix}_{idx}'
-
         if unique_key not in st.session_state:
             st.session_state[unique_key] = False
 
+# Function to handle checkbox changes
+def handle_checkbox_change(idx, key):
+    if st.session_state[key]:
+        st.session_state.selected_recipes.add(idx)
+    else:
+        st.session_state.selected_recipes.discard(idx)
+
+# Function to display recommendations with selections
+def display_recommendations_with_selection(recommendations, key_prefix=''):
+    initialize_checkbox_state(recommendations, key_prefix)
+    selected_recipes = []
+
+    for idx, row in recommendations.iterrows():
+        unique_key = f'recipe_select_{key_prefix}_{idx}'
+        is_selected = st.session_state[unique_key]
+
         col1, col2 = st.columns([1, 11])
-        is_selected = col1.checkbox("", key=unique_key, value=st.session_state[unique_key])
-        
-        if is_selected:
-            st.session_state.selected_recipe_indices.add(idx)
-            selected_recipes.append(row)
-        else:
-            st.session_state.selected_recipe_indices.discard(idx)
-        
+        with col1:
+            st.checkbox("", key=unique_key, value=is_selected, on_change=handle_checkbox_change, args=(idx, unique_key))
+
         with col2:
             with st.expander(f"📗 {row['Name']}"):
+                if is_selected:
+                    selected_recipes.append(row)
+
                 col1, col2 = st.columns(2)
                 with col1:
                     st.write("**📊 Nutritional Information**")
@@ -380,9 +387,7 @@ def display_recommendations_with_selection(recommendations, key_prefix=''):
                     st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
                     st.write(f"• Sugar: {row['SugarContent']:.1f}g")
                 st.write("**🥗 Ingredients**")
-                ingredients = combine_ingredients(
-                    row.get('RecipeIngredientQuantities', ''), row.get('RecipeIngredientParts', '')
-                )
+                ingredients = combine_ingredients(row.get('RecipeIngredientQuantities', ''), row.get('RecipeIngredientParts', ''))
                 if ingredients:
                     for ingredient in ingredients:
                         st.write(f"• {ingredient}")
@@ -396,7 +401,6 @@ def display_recommendations_with_selection(recommendations, key_prefix=''):
     total_calories, total_nutrients = calculate_total_nutrition(selected_recipes)
     st.write("### 🥗 Total Nutritional Information for Selected Recipes")
     plot_total_nutrition(total_calories, total_nutrients)
-
     return recommendations
 
 # Function to calculate total nutrition
@@ -474,6 +478,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         if not recommendations.empty:
             st.session_state.all_recommendations_cache = recommendations
             st.session_state.previous_recommendations = set(recommendations.index[:5].tolist())
+            st.session_state.selected_recipes = set()
             display_recommendations_with_selection(recommendations.head(5))
         else:
             st.warning("No recommendations found. Please try different inputs.")
@@ -492,7 +497,6 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
         else:
             st.warning("Please get initial recommendations first.")
-
 
 #Weightloss prediction
 elif page == "⚖️Weight Loss Prediction":
