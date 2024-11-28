@@ -163,11 +163,11 @@ def recommend_food(input_data, df, models, excluded_indices=None):
             
         if wellness_goal == "Lose Weight":
             cluster_data['weight_loss_score'] = (
-                -0.4 * cluster_data['Calories'] +
+                -0.6 * cluster_data['Calories'] +
                 0.3 * cluster_data['ProteinContent'] +
-                -0.3 * cluster_data['SaturatedFatContent'] +
+                -0.8 * cluster_data['SaturatedFatContent'] +
                 0.2 * cluster_data['FiberContent'] +
-                -0.2 * cluster_data['SugarContent']
+                -0.8 * cluster_data['SugarContent']
             )
             max_score = cluster_data['weight_loss_score'].max()
             min_score = cluster_data['weight_loss_score'].min()
@@ -180,8 +180,8 @@ def recommend_food(input_data, df, models, excluded_indices=None):
             protein_per_meal = daily_protein_target / 3
             
             cluster_data['muscle_gain_score'] = (
-                0.4 * (1 / (abs(cluster_data['ProteinContent'] - protein_per_meal) + 1)) +
-                0.3 * cluster_data['ProteinContent'] +
+                0.8 * (1 / (abs(cluster_data['ProteinContent'] - protein_per_meal) + 1)) +
+                0.8 * cluster_data['ProteinContent'] +
                 0.2 * cluster_data['Calories'] +
                 0.1 * cluster_data['CarbohydrateContent']
             )
