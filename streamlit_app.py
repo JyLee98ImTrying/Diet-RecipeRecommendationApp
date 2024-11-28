@@ -367,8 +367,11 @@ def handle_checkbox_change(idx, key):
 
 # Function to display recommendations with selections
 def display_recommendations_with_selection(recommendations, key_prefix=''):
+    if recommendations is None or recommendations.empty:  # Ensure recommendations is valid
+        st.warning("No recommendations to display.")
+        return  # Exit early if there are no recommendations
+    
     initialize_checkbox_state(recommendations, key_prefix)
-    selected_recipes = []
 
     for idx, row in recommendations.iterrows():
         unique_key = f'recipe_select_{key_prefix}_{idx}'
