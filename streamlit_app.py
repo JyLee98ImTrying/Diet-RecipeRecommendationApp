@@ -52,48 +52,19 @@ def load_models():
         return None
 
 def format_recipe_instructions(instructions):
-    """Format recipe instructions from c() format to numbered list."""
     if not isinstance(instructions, str):
         return []
-    # Remove c() wrapper and split by commas
     instructions = instructions.replace('c(', '').replace(')', '')
-    # Split by '", ' and clean up remaining quotes
     steps = [step.strip().strip('"') for step in instructions.split('",')]
     return steps
 
-def combine_ingredients(quantities, parts):
-    """Combine ingredient quantities and parts into natural language format."""
-    if pd.isna(quantities) or pd.isna(parts):
-        return []
-        
-    try:
-        def parse_r_vector(text):
-            if not isinstance(text, str):
-                return []
-            text = text.replace('c(', '').replace(')', '')
-            items = text.split(',')
-            cleaned = []
-            for item in items:
-                item = item.strip().strip('"').strip("'")
-                if item.upper() != 'NA':  
-                    cleaned.append(item)
-            return cleaned
 
-        quantities_list = parse_r_vector(quantities)
-        parts_list = parse_r_vector(parts)
-        
-        ingredients = []
-        for i in range(len(parts_list)): 
-            if i < len(quantities_list) and quantities_list[i] and quantities_list[i].upper() != 'NA':
-                ingredients.append(f"{quantities_list[i]} {parts_list[i]}".strip())
-            else:
-                ingredients.append(parts_list[i])
-        
-        return [ing for ing in ingredients if ing]
-        
-    except Exception as e:
-        st.error(f"Error processing ingredients: {str(e)}")
+def combine_ingredients(quantities, parts):
+    if not quantities or not parts:
         return []
+    quantities = quantities.split(',')
+    parts = parts.split(',')
+    return [f"{quantity.strip()} {part.strip()}" for quantity, part in zip(quantities, parts)]
 
 
 def calculate_caloric_needs(gender, weight, height, age):
@@ -372,6 +343,11 @@ import matplotlib.pyplot as plt
 
 # Function to display recommendations with selections
 def display_recommendations_with_selection(recommendations, key_prefix=''):
+    if 'selected_recipe_indices' not in st.session_state:
+        st.session_state.selected_recipe_indices = set()
+    if 'current_recommendations' not in st.session_state:
+        st.session_state.current_recommendations = recommendations
+
     selected_recipes = []
     for idx, row in recommendations.iterrows():
         unique_key = f'recipe_select_{key_prefix}_{idx}'
@@ -383,10 +359,10 @@ def display_recommendations_with_selection(recommendations, key_prefix=''):
         is_selected = col1.checkbox("", key=unique_key, value=st.session_state[unique_key])
         
         if is_selected:
-            st.session_state[unique_key] = True
+            st.session_state.selected_recipe_indices.add(idx)
             selected_recipes.append(row)
         else:
-            st.session_state[unique_key] = False
+            st.session_state.selected_recipe_indices.discard(idx)
         
         with col2:
             with st.expander(f"📗 {row['Name']}"):
@@ -420,6 +396,7 @@ def display_recommendations_with_selection(recommendations, key_prefix=''):
     total_calories, total_nutrients = calculate_total_nutrition(selected_recipes)
     st.write("### 🥗 Total Nutritional Information for Selected Recipes")
     plot_total_nutrition(total_calories, total_nutrients)
+
     return recommendations
 
 # Function to calculate total nutrition
@@ -497,7 +474,6 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         if not recommendations.empty:
             st.session_state.all_recommendations_cache = recommendations
             st.session_state.previous_recommendations = set(recommendations.index[:5].tolist())
-            st.session_state.selected_recipes = set()
             display_recommendations_with_selection(recommendations.head(5))
         else:
             st.warning("No recommendations found. Please try different inputs.")
