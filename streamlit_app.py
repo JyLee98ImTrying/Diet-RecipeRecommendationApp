@@ -362,19 +362,13 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         
         if current_recommendations is not None and not current_recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
-                
-                # Create columns for checkbox and expander
-                col1, col2 = st.columns([1, 11])
-                
-                # Expander in second column
-                with col2:
-                    with st.expander(f"📗 {row['Name']}"):
-                        # Update selection state
-                        if is_selected:
-                            st.session_state.selected_recipe_indices.add(idx)
-                            selected_recipes.append(row)
-                        else:
-                            st.session_state.selected_recipe_indices.discard(idx)
+
+                with st.expander(f"📗 {row['Name']}"):
+                    if is_selected:
+                        st.session_state.selected_recipe_indices.add(idx)
+                        selected_recipes.append(row)
+                    else:
+                        st.session_state.selected_recipe_indices.discard(idx)
                         
                         # Display recipe details
                         col1, col2 = st.columns(2)
