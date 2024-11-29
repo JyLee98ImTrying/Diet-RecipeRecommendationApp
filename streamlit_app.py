@@ -259,6 +259,50 @@ def recommend_food(input_data, df, models, excluded_indices=None):
         st.write("Full error details:", e)
         return pd.DataFrame()
 
+def create_nutrient_distribution_plot(selected_recipes):
+    """
+    Create a distribution plot for nutritional content of selected recipes
+    
+    Parameters:
+    selected_recipes (pd.DataFrame): DataFrame of selected recipes
+    
+    Returns:
+    matplotlib figure
+    """
+    nutrients = ['ProteinContent', 'FatContent', 'CarbohydrateContent', 
+                 'SodiumContent', 'CholesterolContent', 
+                 'SaturatedFatContent', 'SugarContent']
+    
+    fig, axes = plt.subplots(len(nutrients), 1, figsize=(10, 4*len(nutrients)))
+    fig.suptitle('Nutritional Content Distribution of Selected Recipes', fontsize=16)
+    
+    for i, nutrient in enumerate(nutrients):
+        sns.boxplot(x=selected_recipes[nutrient], ax=axes[i])
+        axes[i].set_title(f'{nutrient} Distribution')
+        axes[i].set_xlabel('Content (g/serving)')
+    
+    plt.tight_layout()
+    return fig
+
+def create_calories_summary_plot(selected_recipes):
+    """
+    Create a bar plot summarizing calories of selected recipes
+    
+    Parameters:
+    selected_recipes (pd.DataFrame): DataFrame of selected recipes
+    
+    Returns:
+    matplotlib figure
+    """
+    plt.figure(figsize=(10, 6))
+    plt.bar(selected_recipes['Name'], selected_recipes['Calories'])
+    plt.title('Calories in Selected Recipes', fontsize=16)
+    plt.xlabel('Recipe Name')
+    plt.ylabel('Calories (kcal)')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    return plt.gcf()
+
 # Sidebar for Page Navigation
 with st.sidebar.expander("Navigation", expanded=True):
     page = st.radio("Go to:", ["ReadMe 📖", "🍅🧀MyHealthMyFood🥑🥬", "⚖️Weight Loss Prediction", "🔎Search for Recipes", "Recipe Data Visualization📊"])
@@ -282,6 +326,7 @@ def render_readme_page():
     - **Content-Based Recommendation**: Suggests recipes based on item similarity
     
     All you have to do is key in your information, and let the model do the rest 👌 
+    You can even select recipes you like to calculate the total caloric and nutrition intake you'll consume, if you prepare according to the recipes! 
 
     Happy meal-prepping and bon voyage to your goals! 🚢
 
@@ -315,6 +360,8 @@ if page == "ReadMe 📖":
 
 if 'recommendations' not in st.session_state:
     st.session_state.recommendations = None
+if 'selected_recipes' not in st.session_state:
+    st.session_state.selected_recipes = set()
 if 'previous_recommendations' not in st.session_state:
     st.session_state.previous_recommendations = set()
 if 'all_recommendations_cache' not in st.session_state:
@@ -349,9 +396,22 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         return steps
 
     def display_recommendations_with_selection(recommendations, key_prefix=''):
+        """
+        Display recommendations with checkboxes next to expander headers
+        
+        Parameters:
+        recommendations (pd.DataFrame): DataFrame of recipe recommendations
+        key_prefix (str): Unique prefix for checkbox keys to avoid collision
+        
+        Returns:
+        pd.DataFrame: Selected recipes
+        """
         # Initialize session state for selections and recommendations
         if 'current_recommendations' not in st.session_state:
             st.session_state.current_recommendations = None
+        
+        if 'selected_recipe_indices' not in st.session_state:
+            st.session_state.selected_recipe_indices = set()
     
         # Store new recommendations only if they are provided
         if recommendations is not None and not recommendations.empty:
@@ -362,13 +422,31 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         
         if current_recommendations is not None and not current_recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
-
-                with st.expander(f"📗 {row['Name']}"):
-                    if is_selected:
-                        st.session_state.selected_recipe_indices.add(idx)
-                        selected_recipes.append(row)
-                    else:
-                        st.session_state.selected_recipe_indices.discard(idx)
+                
+            selected_recipes = []
+            for idx, row in current_recommendations.iterrows():
+                unique_key = f'recipe_select_{key_prefix}_{idx}'
+                
+                # Create columns for checkbox and expander
+                col1, col2 = st.columns([1, 11])
+                
+                # Checkbox in first column
+                with col1:
+                    is_selected = st.checkbox(
+                        "",  # Empty label as we're putting it next to the expander
+                        key=unique_key,
+                        value=idx in st.session_state.selected_recipe_indices
+                    )
+                
+                # Expander in second column
+                with col2:
+                    with st.expander(f"📗 {row['Name']}"):
+                        # Update selection state
+                        if is_selected:
+                            st.session_state.selected_recipe_indices.add(idx)
+                            selected_recipes.append(row)
+                        else:
+                            st.session_state.selected_recipe_indices.discard(idx)
                         
                         # Display recipe details
                         col1, col2 = st.columns(2)
