@@ -395,6 +395,77 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         steps = [step.strip().strip('"') for step in instructions.split('",')]
         return steps
 
+    def create_recipe_expander(row, idx, key_prefix):
+        """
+        Create an expander for a single recipe with detailed information
+        
+        Parameters:
+        row (pd.Series): Single recipe row from DataFrame
+        idx (int): Index of the recipe
+        key_prefix (str): Unique prefix for checkbox keys
+        
+        Returns:
+        bool: Whether the recipe is selected
+        """
+        unique_key = f'recipe_select_{key_prefix}_{idx}'
+        
+        # Create columns for checkbox and expander
+        col1, col2 = st.columns([1, 11])
+        
+        # Checkbox in first column
+        with col1:
+            is_selected = st.checkbox(
+                "",  # Empty label as we're putting it next to the expander
+                key=unique_key,
+                value=idx in st.session_state.selected_recipe_indices
+            )
+        
+        # Expander in second column
+        with col2:
+            with st.expander(f"📗 {row['Name']}"):
+                # Update selection state
+                if is_selected:
+                    st.session_state.selected_recipe_indices.add(idx)
+                else:
+                    st.session_state.selected_recipe_indices.discard(idx)
+                
+                # Display recipe details
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.write("**📊 Nutritional Information**")
+                    st.write(f"• Calories: {row['Calories']:.1f}")
+                    st.write(f"• Protein: {row['ProteinContent']:.1f}g")
+                    st.write(f"• Fat: {row['FatContent']:.1f}g")
+                    st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
+                
+                with col2:
+                    st.write("**🔍 Additional Details**")
+                    st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
+                    st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
+                    st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
+                    st.write(f"• Sugar: {row['SugarContent']:.1f}g")
+                
+                # Ingredients section
+                st.write("**🥗 Ingredients**")
+                ingredients = combine_ingredients(
+                    row.get('RecipeIngredientQuantities', ''), 
+                    row.get('RecipeIngredientParts', '')
+                )
+                if ingredients:
+                    for ingredient in ingredients:
+                        st.write(f"• {ingredient}")
+                else:
+                    st.write("No ingredient information available")
+                
+                # Recipe Instructions
+                st.write("**👩‍🍳 Recipe Instructions**")
+                instructions = format_recipe_instructions(row['RecipeInstructions'])
+                for i, step in enumerate(instructions, 1):
+                    st.write(f"{i}. {step}")
+        
+        return is_selected
+
     def display_recommendations_with_selection(recommendations, key_prefix=''):
         """
         Display recommendations with checkboxes next to expander headers
@@ -425,63 +496,11 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 
             selected_recipes = []
             for idx, row in current_recommendations.iterrows():
-                unique_key = f'recipe_select_{key_prefix}_{idx}'
+                # Use the new function to create expander
+                is_selected = create_recipe_expander(row, idx, key_prefix)
                 
-                # Create columns for checkbox and expander
-                col1, col2 = st.columns([1, 11])
-                
-                # Checkbox in first column
-                with col1:
-                    is_selected = st.checkbox(
-                        "",  # Empty label as we're putting it next to the expander
-                        key=unique_key,
-                        value=idx in st.session_state.selected_recipe_indices
-                    )
-                
-                # Expander in second column
-                with col2:
-                    with st.expander(f"📗 {row['Name']}"):
-                        # Update selection state
-                        if is_selected:
-                            st.session_state.selected_recipe_indices.add(idx)
-                            selected_recipes.append(row)
-                        else:
-                            st.session_state.selected_recipe_indices.discard(idx)
-                        
-                        # Display recipe details
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            st.write("**📊 Nutritional Information**")
-                            st.write(f"• Calories: {row['Calories']:.1f}")
-                            st.write(f"• Protein: {row['ProteinContent']:.1f}g")
-                            st.write(f"• Fat: {row['FatContent']:.1f}g")
-                            st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
-                        
-                        with col2:
-                            st.write("**🔍 Additional Details**")
-                            st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
-                            st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
-                            st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
-                            st.write(f"• Sugar: {row['SugarContent']:.1f}g")
-                        
-                        # Ingredients section
-                        st.write("**🥗 Ingredients**")
-                        ingredients = combine_ingredients(
-                            row.get('RecipeIngredientQuantities', ''), 
-                            row.get('RecipeIngredientParts', '')
-                        )
-                        if ingredients:
-                            for ingredient in ingredients:
-                                st.write(f"• {ingredient}")
-                        else:
-                            st.write("No ingredient information available")
-                        
-                        # Recipe Instructions
-                        st.write("**👩‍🍳 Recipe Instructions**")
-                        instructions = format_recipe_instructions(row['RecipeInstructions'])
-                        for i, step in enumerate(instructions, 1):
-                            st.write(f"{i}. {step}")
+                if is_selected:
+                    selected_recipes.append(row)
             
             # Prepare selected recipes
             if selected_recipes:
