@@ -503,20 +503,20 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                     selected_recipes.append(row)
             
             # Prepare selected recipes
-        if selected_recipes:
-            st.write("### 🍽️ Selected Recipes")
-            selected_df = pd.DataFrame(selected_recipes)
-            for name in selected_df['Name']:
-                st.write(f"• {name}")
-                
-            if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
-                st.write("### 🍽️ Nutritional Content Distribution")
-                fig1 = create_nutrient_distribution_plot(selected_df)
-                st.pyplot(fig1)
+            if selected_recipes:
+                st.write("### 🍽️ Selected Recipes")
+                selected_df = pd.DataFrame(selected_recipes)
+                for name in selected_df['Name']:
+                    st.write(f"• {name}")
                     
-                st.write("### 🔢 Calories Breakdown")
-                fig2 = create_calories_summary_plot(selected_df)
-                st.pyplot(fig2)
+                if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
+                    st.write("### 🍽️ Nutritional Content Distribution")
+                    fig1 = create_nutrient_distribution_plot(selected_df)
+                    st.pyplot(fig1)
+                        
+                    st.write("### 🔢 Calories Breakdown")
+                    fig2 = create_calories_summary_plot(selected_df)
+                    st.pyplot(fig2)
         
             return current_recommendations
         else:
