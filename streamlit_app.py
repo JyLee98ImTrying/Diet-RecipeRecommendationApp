@@ -522,18 +522,8 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         st.write("### 🔥 Your Daily Caloric Needs")
         st.write(f"**Total Daily Calories:** {daily_calories:.0f} calories")
         
-        # Breakdown of caloric distribution
-        protein_calories = 0.8 * weight * 4  # 1g protein = 4 calories
-        fat_calories = 0.25 * daily_calories
-        carb_calories = 0.55 * daily_calories
-        
-        st.write("**Nutrient Breakdown:**")
-        st.write(f"• Protein: {protein_calories:.0f} calories ({(protein_calories/daily_calories*100):.1f}%)")
-        st.write(f"• Fat: {fat_calories:.0f} calories ({(fat_calories/daily_calories*100):.1f}%)")
-        st.write(f"• Carbohydrates: {carb_calories:.0f} calories ({(carb_calories/daily_calories*100):.1f}%)")
-        
         # Meal distribution
-        meal_calories = daily_calories * 0.3  # Assuming each meal is about 30% of daily needs
+        meal_calories = daily_calories * 0.3
         st.write(f"**Recommended Single Meal Calories:** {meal_calories:.0f} calories")
             
     if st.button("Get Recommendations"):
