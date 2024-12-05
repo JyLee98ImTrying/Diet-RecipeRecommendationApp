@@ -402,7 +402,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         if 'current_recommendations' not in st.session_state:
             st.session_state.current_recommendations = pd.DataFrame()
             st.session_state.selected_recipe_indices = set()
-    
+        
         if recommendations is not None and not recommendations.empty:
             st.session_state.current_recommendations = recommendations
         
@@ -411,29 +411,26 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         if current_recommendations is not None and not current_recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
         
-            selected_recipes = []
             for idx, row in current_recommendations.iterrows():
                 unique_key = f'recipe_select_{key_prefix}_{idx}'
-    
-                with st.form(key=unique_key):
-                    st.write(f"📗 {row['Name']}")
-                    
+                
+                with st.expander(f"📗 {row['Name']}"):
                     col1, col2 = st.columns(2)
-                    
+        
                     with col1:
                         st.write("**📊 Nutritional Information**")
                         st.write(f"• Calories: {row['Calories']:.1f}")
                         st.write(f"• Protein: {row['ProteinContent']:.1f}g")
                         st.write(f"• Fat: {row['FatContent']:.1f}g")
                         st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
-                    
+        
                     with col2:
                         st.write("**🔍 Additional Details**")
                         st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
                         st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
                         st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
                         st.write(f"• Sugar: {row['SugarContent']:.1f}g")
-                    
+        
                     st.write("**🥗 Ingredients**")
                     ingredients = combine_ingredients(
                         row.get('RecipeIngredientQuantities', ''), row.get('RecipeIngredientParts', '')
@@ -443,24 +440,35 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                             st.write(f"• {ingredient}")
                     else:
                         st.write("No ingredient information available")
-                    
+        
                     st.write("**👩‍🍳 Recipe Instructions**")
                     instructions = format_recipe_instructions(row['RecipeInstructions'])
                     for i, step in enumerate(instructions, 1):
                         st.write(f"{i}. {step}")
-                    
-                    # Select button for each recipe
-                    select_button = st.form_submit_button("Select this Recipe")
-                    
-                    if select_button:
-                        if idx not in st.session_state.selected_recipe_indices:
-                            st.session_state.selected_recipe_indices.add(idx)
-                            st.success(f"Recipe '{row['Name']}' selected!")
-                        else:
-                            st.session_state.selected_recipe_indices.discard(idx)
-                            st.info(f"Recipe '{row['Name']}' deselected.")
+        
+            # Separate section for recipe selection
+            st.write("### 🍽️ Select Recipes")
             
-            # Separate button to generate nutrition plot
+            # Get the current recommendations for selection
+            selection_options = current_recommendations.copy()
+            selection_options['Display'] = selection_options['Name'] + ' (' + selection_options['Calories'].round(1).astype(str) + ' cal)'
+            
+            # Multi-select widget
+            selected_recipe_names = st.multiselect(
+                "Choose recipes to include in your meal plan", 
+                options=selection_options['Display'].tolist()
+            )
+            
+            # Map selected display names back to indices
+            if selected_recipe_names:
+                selected_indices = selection_options[
+                    selection_options['Display'].isin(selected_recipe_names)
+                ].index.tolist()
+                
+                # Update session state with selected indices
+                st.session_state.selected_recipe_indices = set(selected_indices)
+            
+            # Button to generate nutrition plot
             if st.button("Generate Nutrition Plot"):
                 # Retrieve selected recipes
                 selected_recipes = [
@@ -539,20 +547,21 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         recommendations = recommend_food(input_features, df, models)
         
         # Store all recommendations in cache for reshuffling
-        if not recommendations.empty:
+       if not recommendations.empty:
             st.session_state.all_recommendations_cache = recommendations
-            # Store the indices of shown recommendations
             st.session_state.previous_recommendations.update(recommendations.index[:5].tolist())
-            # Display only top 5 recommendations
             display_recommendations_with_selection(recommendations.head(5))
         else:
             st.warning("No recommendations found. Please try different inputs.")
-    
     # Update the reshuffle button section similarly:
     if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'all_recommendations_cache'):
         if st.session_state.all_recommendations_cache is not None:
             # Get all recommendations excluding previously shown ones
             remaining_recommendations = st.session_state.all_recommendations_cache[
+                ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
+            ]
+            
+             remaining_recommendations = st.session_state.all_recommendations_cache[
                 ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
             ]
             
