@@ -419,7 +419,6 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 key=unique_key,
                 value=idx in st.session_state.selected_recipe_indices
             )
-        return is_selected
         
         # Expander in second column
         with col2:
@@ -464,6 +463,8 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 instructions = format_recipe_instructions(row['RecipeInstructions'])
                 for i, step in enumerate(instructions, 1):
                     st.write(f"{i}. {step}")
+                    
+        return is_selected
 
     def display_recommendations_with_selection(recommendations, key_prefix=''):
         """
