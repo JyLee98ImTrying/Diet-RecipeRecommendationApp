@@ -55,8 +55,9 @@ def format_recipe_instructions(instructions):
     """Format recipe instructions from c() format to numbered list."""
     if not isinstance(instructions, str):
         return []
-    # Clean up wrappers and ","
+    # Remove c() wrapper and split by commas
     instructions = instructions.replace('c(', '').replace(')', '')
+    # Split by '", ' and clean up remaining quotes
     steps = [step.strip().strip('"') for step in instructions.split('",')]
     return steps
 
@@ -395,159 +396,111 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         steps = [step.strip().strip('"') for step in instructions.split('",')]
         return steps
 
-    def create_recipe_expander(row, idx, key_prefix):
-        """
-        Create an expander for a single recipe with detailed information
-        
-        Parameters:
-        row (pd.Series): Single recipe row from DataFrame
-        idx (int): Index of the recipe
-        key_prefix (str): Unique prefix for checkbox keys
-        
-        Returns:
-        bool: Whether the recipe is selected
-        """
-        unique_key = f'recipe_select_{key_prefix}_{idx}'
-        
-        # Create columns for checkbox and expander
-        col1, col2 = st.columns([1, 11])
-        
-        # Checkbox in first column
-        with col1:
-            is_selected = st.checkbox(
-                "",  
-                key=unique_key,
-                value=idx in st.session_state.selected_recipe_indices
-            )
-        
-        # Expander in second column
-        with col2:
-            with st.expander(f"📗 {row['Name']}"):
-                # Update selection state
-                if is_selected:
-                    st.session_state.selected_recipe_indices.add(idx)
-                else:
-                    st.session_state.selected_recipe_indices.discard(idx)
-                
-                # Display recipe details
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.write("**📊 Nutritional Information**")
-                    st.write(f"• Calories: {row['Calories']:.1f}")
-                    st.write(f"• Protein: {row['ProteinContent']:.1f}g")
-                    st.write(f"• Fat: {row['FatContent']:.1f}g")
-                    st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
-                
-                with col2:
-                    st.write("**🔍 Additional Details**")
-                    st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
-                    st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
-                    st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
-                    st.write(f"• Sugar: {row['SugarContent']:.1f}g")
-                
-                # Ingredients section
-                st.write("**🥗 Ingredients**")
-                ingredients = combine_ingredients(
-                    row.get('RecipeIngredientQuantities', ''), 
-                    row.get('RecipeIngredientParts', '')
-                )
-                if ingredients:
-                    for ingredient in ingredients:
-                        st.write(f"• {ingredient}")
-                else:
-                    st.write("No ingredient information available")
-                
-                # Recipe Instructions
-                st.write("**👩‍🍳 Recipe Instructions**")
-                instructions = format_recipe_instructions(row['RecipeInstructions'])
-                for i, step in enumerate(instructions, 1):
-                    st.write(f"{i}. {step}")
-                    
-        return is_selected
+    import matplotlib.pyplot as plt
 
     def display_recommendations_with_selection(recommendations, key_prefix=''):
-        """
-        Display recommendations with checkboxes next to expander headers
-        
-        Parameters:
-        recommendations (pd.DataFrame): DataFrame of recipe recommendations
-        key_prefix (str): Unique prefix for checkbox keys to avoid collision
-        
-        Returns:
-        pd.DataFrame: Selected recipes
-        """
-        # Initialize session state for selections and recommendations
         if 'current_recommendations' not in st.session_state:
-            st.session_state.current_recommendations = None
-        
-        if 'selected_recipe_indices' not in st.session_state:
+            st.session_state.current_recommendations = pd.DataFrame()
             st.session_state.selected_recipe_indices = set()
     
-        # Store new recommendations only if they are provided
         if recommendations is not None and not recommendations.empty:
             st.session_state.current_recommendations = recommendations
-        
-        # Always use recommendations from session state
+    
         current_recommendations = st.session_state.current_recommendations
-        
+    
         if current_recommendations is not None and not current_recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
-                
+    
             selected_recipes = []
             for idx, row in current_recommendations.iterrows():
-                # Use the new function to create expander
-                is_selected = create_recipe_expander(row, idx, key_prefix)
-                
-                if is_selected:
-                    selected_recipes.append(row)
-            
-            # Prepare selected recipes
-            if selected_recipes:
-                st.write("### 🍽️ Selected Recipes")
-                selected_df = pd.DataFrame(selected_recipes)
-                for name in selected_df['Name']:
-                    st.write(f"• {name}")
-                    
-                if st.button("Visualize Selected Recipes", key=f'{key_prefix}_visualize'):
-                    st.write("### 🍽️ Nutritional Content Distribution")
-                    fig1 = create_nutrient_distribution_plot(selected_df)
-                    st.pyplot(fig1)
-                        
-                    st.write("### 🔢 Calories Breakdown")
-                    fig2 = create_calories_summary_plot(selected_df)
-                    st.pyplot(fig2)
-        
+                unique_key = f'recipe_select_{key_prefix}_{idx}'
+                col1, col2 = st.columns([1, 11])
+    
+                with col1:
+                    is_selected = st.checkbox( 
+                        key=unique_key, 
+                        value=idx in st.session_state.selected_recipe_indices
+                    )
+    
+                with col2:
+                    with st.expander(f"📗 {row['Name']}"):
+                        if is_selected:
+                            st.session_state.selected_recipe_indices.add(idx)
+                            selected_recipes.append(row)
+                        else:
+                            st.session_state.selected_recipe_indices.discard(idx)
+    
+                        col1, col2 = st.columns(2)
+    
+                        with col1:
+                            st.write("**📊 Nutritional Information**")
+                            st.write(f"• Calories: {row['Calories']:.1f}")
+                            st.write(f"• Protein: {row['ProteinContent']:.1f}g")
+                            st.write(f"• Fat: {row['FatContent']:.1f}g")
+                            st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
+    
+                        with col2:
+                            st.write("**🔍 Additional Details**")
+                            st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
+                            st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
+                            st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
+                            st.write(f"• Sugar: {row['SugarContent']:.1f}g")
+    
+                        st.write("**🥗 Ingredients**")
+                        ingredients = combine_ingredients(
+                            row.get('RecipeIngredientQuantities', ''), row.get('RecipeIngredientParts', '')
+                        )
+                        if ingredients:
+                            for ingredient in ingredients:
+                                st.write(f"• {ingredient}")
+                        else:
+                            st.write("No ingredient information available")
+    
+                        st.write("**👩‍🍳 Recipe Instructions**")
+                        instructions = format_recipe_instructions(row['RecipeInstructions'])
+                        for i, step in enumerate(instructions, 1):
+                            st.write(f"{i}. {step}")
+    
+            total_calories, total_nutrients = calculate_total_nutrition(selected_recipes)
+            st.write("### 🥗 Total Nutritional Information for Selected Recipes")
+            plot_total_nutrition(total_calories, total_nutrients)
+    
             return current_recommendations
         else:
             if not st.session_state.get('current_recommendations'):
                 st.warning("No recommendations found. Please try different inputs.")
             return pd.DataFrame()
+    
+    def calculate_total_nutrition(selected_recipes):
+        total_calories = sum(recipe['Calories'] for recipe in selected_recipes)
+        total_nutrients = {
+            'ProteinContent': sum(recipe['ProteinContent'] for recipe in selected_recipes),
+            'FatContent': sum(recipe['FatContent'] for recipe in selected_recipes),
+            'CarbohydrateContent': sum(recipe['CarbohydrateContent'] for recipe in selected_recipes),
+            'SodiumContent': sum(recipe['SodiumContent'] for recipe in selected_recipes),
+            'CholesterolContent': sum(recipe['CholesterolContent'] for recipe in selected_recipes),
+            'SaturatedFatContent': sum(recipe['SaturatedFatContent'] for recipe in selected_recipes),
+            'SugarContent': sum(recipe['SugarContent'] for recipe in selected_recipes),
+        }
+        return total_calories, total_nutrients
+    
+    def plot_total_nutrition(total_calories, total_nutrients):
+        labels = list(total_nutrients.keys())
+        values = list(total_nutrients.values())
+    
+        labels.append('Calories')
+        values.append(total_calories)
+    
+        fig, ax = plt.subplots()
+        ax.barh(labels, values, color='skyblue')
+        ax.set_xlabel('Total Nutritional Values')
+        ax.set_title('Total Nutrition of Selected Recipes')
+        st.pyplot(fig)
 
-    def display_caloric_needs(gender, weight, height, age):
-        """
-        Calculate and display daily caloric needs based on user inputs
-        
-        Parameters:
-        gender (str): User's gender
-        weight (float): User's weight in kg
-        height (float): User's height in cm
-        age (int): User's age in years
-        """
-        # Calculate daily caloric needs
-        daily_calories = calculate_caloric_needs(gender, weight, height, age)
-        
-        # Display caloric needs with some nutritional context
-        st.write("### 🔥 Your Daily Caloric Needs")
-        st.write(f"**Total Daily Calories:** {daily_calories:.0f} calories")
-        
-        # Meal distribution
-        meal_calories = daily_calories * 0.3
-        st.write(f"**Recommended Single Meal Calories:** {meal_calories:.0f} calories")
+
             
     if st.button("Get Recommendations"):
         daily_calories = calculate_caloric_needs(gender, weight, height, age)
-        display_caloric_needs(gender, weight, height, age)
         protein_grams = 0.8 * weight
         fat_calories = 0.25 * daily_calories
         carb_calories = 0.55 * daily_calories
