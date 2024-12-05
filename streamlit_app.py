@@ -500,6 +500,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 is_selected = create_recipe_expander(row, idx, key_prefix)
                 
                 if is_selected:
+                    st.write("register click")
                     selected_recipes.append(row)
             
             # Prepare selected recipes
