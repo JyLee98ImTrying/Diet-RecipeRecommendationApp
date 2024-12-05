@@ -561,10 +561,6 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
             ]
             
-             remaining_recommendations = st.session_state.all_recommendations_cache[
-                ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
-            ]
-            
             if not remaining_recommendations.empty:
                 # Get next 5 recommendations
                 new_recommendations = remaining_recommendations.head(5)
