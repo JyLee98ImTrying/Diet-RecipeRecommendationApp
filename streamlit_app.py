@@ -466,7 +466,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                     
         return is_selected
 
-    def display_recommendations_with_selection(recommendations, key_prefix=is_selected):
+    def display_recommendations_with_selection(recommendations, key_prefix=''):
         """
         Display recommendations with checkboxes next to expander headers
         
