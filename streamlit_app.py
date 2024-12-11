@@ -1,3 +1,4 @@
+from streamlit_echarts import st_echarts
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -483,14 +484,17 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             if st.button("Generate Nutrition Plot", key="generate_plot_btn"):
                 # Retrieve selected recipes
                 selected_recipes = [
-                    row for idx, row in current_recommendations.iterrows() 
+                    row.to_dict() for idx, row in current_recommendations.iterrows() 
                     if idx in st.session_state.selected_recipe_indices
                 ]
                 
                 if selected_recipes:
-                    total_calories, total_nutrients = calculate_total_nutrition(selected_recipes)
+                    # Calculate total nutrition
+                    total_nutrition_values = calculate_total_nutrition_advanced(selected_recipes)
+                    
+                    # Display comprehensive nutrition graphs
                     st.write("### 🥗 Total Nutritional Information for Selected Recipes")
-                    plot_total_nutrition(total_calories, total_nutrients)
+                    plot_nutrition_graphs(total_nutrition_values)
                     st.session_state.nutrition_plot_generated = True
                 else:
                     st.warning("No recipes selected. Please select recipes first.")
@@ -498,14 +502,14 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             # Display previously generated plot if exists
             if st.session_state.nutrition_plot_generated:
                 selected_recipes = [
-                    row for idx, row in current_recommendations.iterrows() 
+                    row.to_dict() for idx, row in current_recommendations.iterrows() 
                     if idx in st.session_state.selected_recipe_indices
                 ]
                 
                 if selected_recipes:
-                    total_calories, total_nutrients = calculate_total_nutrition(selected_recipes)
+                    total_nutrition_values = calculate_total_nutrition_advanced(selected_recipes)
                     st.write("### 🥗 Total Nutritional Information for Selected Recipes")
-                    plot_total_nutrition(total_calories, total_nutrients)
+                    plot_nutrition_graphs(total_nutrition_values)
             
             return current_recommendations
         else:
@@ -547,6 +551,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         fat_grams = fat_calories / 9
         carb_grams = carb_calories / 4
         meal_fraction = 0.3
+        st.session_state.daily_calories = daily_calories * meal_fraction
         
         input_features = np.array([
             daily_calories * meal_fraction,
