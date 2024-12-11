@@ -363,11 +363,94 @@ if page == "ReadMe 📖":
 if 'recommendations' not in st.session_state:
     st.session_state.recommendations = None
 if 'selected_recipes' not in st.session_state:
-    st.session_state.selected_recipes = set()
-if 'previous_recommendations' not in st.session_state:
-    st.session_state.previous_recommendations = set()
-if 'all_recommendations_cache' not in st.session_state:
-    st.session_state.all_recommendations_cache = None
+    st.session_state.selected_recipes = []
+if 'nutrition_plot_generated' not in st.session_state:
+    st.session_state.nutrition_plot_generated = False
+
+def display_meal_choices(person, recommendations):    
+    st.subheader('Choose your meal composition:')
+    
+    # Prepare selection options with more details
+    selection_options = []
+    for meal_group in recommendations:
+        for recipe in meal_group:
+            selection_options.append({
+                'name': recipe['Name'], 
+                'calories': recipe['Calories']
+            })
+    
+    # Multi-select widget with default selections
+    selected_recipe_names = st.multiselect(
+        "Choose recipes to include in your meal plan", 
+        options=[f"{r['name']} ({r['calories']:.1f} cal)" for r in selection_options],
+        default=st.session_state.selected_recipes
+    )
+    
+    # Update selected recipes in session state
+    st.session_state.selected_recipes = selected_recipe_names
+    
+    # Button to generate nutrition plot
+    if st.button("Generate Nutrition Plot"):
+        # Retrieve selected recipes
+        selected_full_recipes = []
+        for meal_group in recommendations:
+            for recipe in meal_group:
+                if f"{recipe['Name']} ({recipe['Calories']:.1f} cal)" in selected_recipe_names:
+                    selected_full_recipes.append(recipe)
+        
+        if selected_full_recipes:
+            # Calculate total nutrition
+            total_nutrition_values = {
+                'Calories': sum(recipe['Calories'] for recipe in selected_full_recipes),
+                'Protein': sum(recipe.get('ProteinContent', 0) for recipe in selected_full_recipes),
+                'Fat': sum(recipe.get('FatContent', 0) for recipe in selected_full_recipes),
+                'Carbohydrates': sum(recipe.get('CarbohydrateContent', 0) for recipe in selected_full_recipes)
+            }
+            
+            # Display nutrition graphs
+            st.subheader('Nutritional Breakdown of Selected Recipes')
+            
+            # Pie chart for macronutrients
+            nutritions_graph_options = {
+                "tooltip": {"trigger": "item"},
+                "legend": {"top": "5%", "left": "center"},
+                "series": [{
+                    "type": "pie",
+                    "radius": ["40%", "70%"],
+                    "data": [
+                        {"value": round(total_nutrition_values['Protein']), "name": "Protein"},
+                        {"value": round(total_nutrition_values['Fat']), "name": "Fat"},
+                        {"value": round(total_nutrition_values['Carbohydrates']), "name": "Carbohydrates"}
+                    ]
+                }]
+            }
+            st_echarts(options=nutritions_graph_options, height="500px")
+            
+            # Bar chart for total calories
+            total_calories_graph_options = {
+                "xAxis": {"type": "category", "data": ['Total Calories Chosen']},
+                "yAxis": {"type": "value"},
+                "series": [{
+                    "data": [{"value": round(total_nutrition_values['Calories'])}],
+                    "type": "bar"
+                }]
+            }
+            st_echarts(options=total_calories_graph_options, height="400px")
+            
+            st.session_state.nutrition_plot_generated = True
+
+# In your main app logic
+if generated:
+    st.session_state.generated = True
+    st.session_state.recommendations = recommendations
+    st.session_state.person = person
+
+    with st.container():
+        display.display_recommendation(st.session_state.person, st.session_state.recommendations)
+        st.success('Recommendation Generated Successfully !', icon="✅")
+    
+    with st.container():
+        display_meal_choices(st.session_state.person, st.session_state.recommendations)
 
 # Streamlit UI (Recommendation Page)
 if page == "🍅🧀MyHealthMyFood🥑🥬":
