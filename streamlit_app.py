@@ -356,7 +356,6 @@ def render_readme_page():
     st.markdown("---")
     st.info("Explore recipes, discover nutrition, and enjoy your culinary journey!")
 
-# If this is part of a multi-page Streamlit app
 if page == "ReadMe 📖":
     render_readme_page()
 
@@ -367,108 +366,24 @@ if 'selected_recipes' not in st.session_state:
 if 'nutrition_plot_generated' not in st.session_state:
     st.session_state.nutrition_plot_generated = False
 
-def display_meal_choices(person, recommendations):    
-    st.subheader('Choose your meal composition:')
-    
-    # Prepare selection options with more details
-    selection_options = []
-    for meal_group in recommendations:
-        for recipe in meal_group:
-            selection_options.append({
-                'name': recipe['Name'], 
-                'calories': recipe['Calories']
-            })
-    
-    # Multi-select widget with default selections
-    selected_recipe_names = st.multiselect(
-        "Choose recipes to include in your meal plan", 
-        options=[f"{r['name']} ({r['calories']:.1f} cal)" for r in selection_options],
-        default=st.session_state.selected_recipes
-    )
-    
-    # Update selected recipes in session state
-    st.session_state.selected_recipes = selected_recipe_names
-    
-    # Button to generate nutrition plot
-    if st.button("Generate Nutrition Plot"):
-        # Retrieve selected recipes
-        selected_full_recipes = []
-        for meal_group in recommendations:
-            for recipe in meal_group:
-                if f"{recipe['Name']} ({recipe['Calories']:.1f} cal)" in selected_recipe_names:
-                    selected_full_recipes.append(recipe)
-        
-        if selected_full_recipes:
-            # Calculate total nutrition
-            total_nutrition_values = {
-                'Calories': sum(recipe['Calories'] for recipe in selected_full_recipes),
-                'Protein': sum(recipe.get('ProteinContent', 0) for recipe in selected_full_recipes),
-                'Fat': sum(recipe.get('FatContent', 0) for recipe in selected_full_recipes),
-                'Carbohydrates': sum(recipe.get('CarbohydrateContent', 0) for recipe in selected_full_recipes)
-            }
-            
-            # Display nutrition graphs
-            st.subheader('Nutritional Breakdown of Selected Recipes')
-            
-            # Pie chart for macronutrients
-            nutritions_graph_options = {
-                "tooltip": {"trigger": "item"},
-                "legend": {"top": "5%", "left": "center"},
-                "series": [{
-                    "type": "pie",
-                    "radius": ["40%", "70%"],
-                    "data": [
-                        {"value": round(total_nutrition_values['Protein']), "name": "Protein"},
-                        {"value": round(total_nutrition_values['Fat']), "name": "Fat"},
-                        {"value": round(total_nutrition_values['Carbohydrates']), "name": "Carbohydrates"}
-                    ]
-                }]
-            }
-            st_echarts(options=nutritions_graph_options, height="500px")
-            
-            # Bar chart for total calories
-            total_calories_graph_options = {
-                "xAxis": {"type": "category", "data": ['Total Calories Chosen']},
-                "yAxis": {"type": "value"},
-                "series": [{
-                    "data": [{"value": round(total_nutrition_values['Calories'])}],
-                    "type": "bar"
-                }]
-            }
-            st_echarts(options=total_calories_graph_options, height="400px")
-            
-            st.session_state.nutrition_plot_generated = True
-
-# In your main app logic
-if generated:
-    st.session_state.generated = True
-    st.session_state.recommendations = recommendations
-    st.session_state.person = person
-
-    with st.container():
-        display.display_recommendation(st.session_state.person, st.session_state.recommendations)
-        st.success('Recommendation Generated Successfully !', icon="✅")
-    
-    with st.container():
-        display_meal_choices(st.session_state.person, st.session_state.recommendations)
-
 # Streamlit UI (Recommendation Page)
 if page == "🍅🧀MyHealthMyFood🥑🥬":
     st.title('🍅🧀MyHealthMyFood🥑🥬')
 
-    if df is not None and models is not None:
-        # User inputs
-        gender = st.selectbox("Select your gender", ["Female", "Male"])
-        weight = st.number_input("Enter your weight (kg)", min_value=30, max_value=200, value=70)
-        height = st.number_input("Enter your height (cm)", min_value=100, max_value=250, value=160)
-        age = st.number_input("Enter your age (years)", min_value=1, max_value=100, value=30)
-        health_condition = st.selectbox("Select your health condition", 
-                                      ["No Non-Communicable Disease", "Diabetic", "High Blood Pressure", "High Cholesterol"])
+    with st.form("recommendation_form"):
+        st.write("Modify the values and click the Generate button to use")
+        age = st.number_input('Age',min_value=2, max_value=120, step=1)
+        height = st.number_input('Height(cm)',min_value=50, max_value=300, step=1)
+        weight = st.number_input('Weight(kg)',min_value=10, max_value=300, step=1)
+        gender = st.radio('Gender',('Male','Female'))
+        activity = st.select_slider('Activity',options=['Little/no exercise', 'Light exercise', 'Moderate exercise (3-5 days/wk)', 'Very active (6-7 days/wk)', 
+        'Extra active (very active & physical job)'])
+        option = st.selectbox('Choose your weight loss plan:',display.plans)
+        weight_loss = display.weights[display.plans.index(option)]
+        number_of_meals = st.slider('Meals per day',min_value=3,max_value=5,step=1,value=3)
         
-        wellness_goal = None
-        if health_condition == "No Non-Communicable Disease":
-            wellness_goal = st.selectbox("Select your wellness goal", 
-                                       ["Maintain Weight", "Lose Weight", "Muscle Gain"])
+        # Form submit button
+        submitted = st.form_submit_button("Generate")
     
     def format_recipe_instructions(instructions):
         """Format recipe instructions from c() format to numbered list."""
@@ -483,13 +398,44 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
     import matplotlib.pyplot as plt
 
     def display_recommendations_with_selection(recommendations, key_prefix=''):
-        # Initialize session state if not exists
-        if 'current_recommendations' not in st.session_state:
-            st.session_state.current_recommendations = pd.DataFrame()
-        if 'selected_recipe_indices' not in st.session_state:
-            st.session_state.selected_recipe_indices = set()
-        if 'nutrition_plot_generated' not in st.session_state:
-            st.session_state.nutrition_plot_generated = False
+        if submitted:
+            st.session_state.generated = True
+            st.session_state.age = age
+            st.session_state.height = height
+            st.session_state.weight = weight
+            st.session_state.gender = gender
+            st.session_state.activity = activity
+            st.session_state.option = option
+            st.session_state.weight_loss = weight_loss
+            
+            if number_of_meals == 3:
+                meals_calories_perc = {'breakfast':0.35,'lunch':0.40,'dinner':0.25}
+            elif number_of_meals == 4:
+                meals_calories_perc = {'breakfast':0.30,'morning snack':0.05,'lunch':0.40,'dinner':0.25}
+            else:
+                meals_calories_perc = {'breakfast':0.30,'morning snack':0.05,'lunch':0.40,'afternoon snack':0.05,'dinner':0.20}
+            
+            st.session_state.meals_calories_perc = meals_calories_perc
+            
+            person = Person(age,height,weight,gender,activity,meals_calories_perc,weight_loss)
+            st.session_state.person = person
+            
+            with st.container():
+                display.display_bmi(person)
+            with st.container():
+                display.display_calories(person)
+            
+            with st.spinner('Generating recommendations...'):     
+                recommendations = person.generate_recommendations()
+                st.session_state.recommendations = recommendations
+        
+        # Render recommendations if they exist
+        if st.session_state.get('generated', False):
+            with st.container():
+                display.display_recommendation(st.session_state.person, st.session_state.recommendations)
+                st.success('Recommendation Generated Successfully !', icon="✅")
+            with st.container():
+                display.display_meal_choices(st.session_state.person, st.session_state.recommendations)
         
         # Update current recommendations
         if recommendations is not None and not recommendations.empty:
@@ -647,12 +593,6 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             (carb_grams * 0.03) * meal_fraction,
             (carb_grams * 0.01) * meal_fraction
         ]).reshape(1, -1)
-                
-        # Store in session state
-        st.session_state.current_input_features = input_features
-        st.session_state.current_wellness_goal = wellness_goal
-        st.session_state.current_weight = weight
-        st.session_state.current_health_condition = health_condition
     
         
         # Get initial recommendations
@@ -684,6 +624,90 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
         else:
             st.warning("Please get initial recommendations first.")
+
+def display_meal_choices(person, recommendations):    
+    st.subheader('Choose your meal composition:')
+    
+    # Prepare selection options with more details
+    selection_options = []
+    for meal_group in recommendations:
+        for recipe in meal_group:
+            selection_options.append({
+                'name': recipe['Name'], 
+                'calories': recipe['Calories']
+            })
+    
+    # Multi-select widget with default selections
+    selected_recipe_names = st.multiselect(
+        "Choose recipes to include in your meal plan", 
+        options=[f"{r['name']} ({r['calories']:.1f} cal)" for r in selection_options],
+        default=st.session_state.selected_recipes
+    )
+    
+    # Update selected recipes in session state
+    st.session_state.selected_recipes = selected_recipe_names
+    
+    # Button to generate nutrition plot
+    if st.button("Generate Nutrition Plot"):
+        # Retrieve selected recipes
+        selected_full_recipes = []
+        for meal_group in recommendations:
+            for recipe in meal_group:
+                if f"{recipe['Name']} ({recipe['Calories']:.1f} cal)" in selected_recipe_names:
+                    selected_full_recipes.append(recipe)
+        
+        if selected_full_recipes:
+            # Calculate total nutrition
+            total_nutrition_values = {
+                'Calories': sum(recipe['Calories'] for recipe in selected_full_recipes),
+                'Protein': sum(recipe.get('ProteinContent', 0) for recipe in selected_full_recipes),
+                'Fat': sum(recipe.get('FatContent', 0) for recipe in selected_full_recipes),
+                'Carbohydrates': sum(recipe.get('CarbohydrateContent', 0) for recipe in selected_full_recipes)
+            }
+            
+            # Display nutrition graphs
+            st.subheader('Nutritional Breakdown of Selected Recipes')
+            
+            # Pie chart for macronutrients
+            nutritions_graph_options = {
+                "tooltip": {"trigger": "item"},
+                "legend": {"top": "5%", "left": "center"},
+                "series": [{
+                    "type": "pie",
+                    "radius": ["40%", "70%"],
+                    "data": [
+                        {"value": round(total_nutrition_values['Protein']), "name": "Protein"},
+                        {"value": round(total_nutrition_values['Fat']), "name": "Fat"},
+                        {"value": round(total_nutrition_values['Carbohydrates']), "name": "Carbohydrates"}
+                    ]
+                }]
+            }
+            st_echarts(options=nutritions_graph_options, height="500px")
+            
+            # Bar chart for total calories
+            total_calories_graph_options = {
+                "xAxis": {"type": "category", "data": ['Total Calories Chosen']},
+                "yAxis": {"type": "value"},
+                "series": [{
+                    "data": [{"value": round(total_nutrition_values['Calories'])}],
+                    "type": "bar"
+                }]
+            }
+            st_echarts(options=total_calories_graph_options, height="400px")
+            
+            st.session_state.nutrition_plot_generated = True
+
+    if generated:
+        st.session_state.generated = True
+        st.session_state.recommendations = recommendations
+        st.session_state.person = person
+    
+        with st.container():
+            display.display_recommendation(st.session_state.person, st.session_state.recommendations)
+            st.success('Recommendation Generated Successfully !', icon="✅")
+        
+        with st.container():
+            display_meal_choices(st.session_state.person, st.session_state.recommendations)
 
 #Weightloss prediction
 elif page == "⚖️Weight Loss Prediction":
