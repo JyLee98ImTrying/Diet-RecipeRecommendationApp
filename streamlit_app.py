@@ -538,7 +538,7 @@ def recipe_recommendation_page():
 
     # Reshuffle button
     if st.button("Reshuffle Recommendations"):
-         if st.session_state.all_recommendations_cache is not None:
+        if st.session_state.all_recommendations_cache is not None:
             # Get all recommendations excluding previously shown ones
             remaining_recommendations = st.session_state.all_recommendations_cache[
                 ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
