@@ -557,8 +557,8 @@ def recipe_recommendation_page():
             st.warning("Please get initial recommendations first.")
     pass
 
-# Call the main page function
-recipe_recommendation_page()
+    # Call the main page function
+    recipe_recommendation_page()
 
 #Weightloss prediction
 elif page == "⚖️Weight Loss Prediction":
