@@ -434,23 +434,23 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                 st.session_state.recommendations = recommendations
 
     # Display recommendations section
-    if not st.session_state.recommendations.empty:
-        st.write("### 🍳 Recommended Food Items (Single Serving)")
-        
-        # Prepare selection options
-        selection_options = st.session_state.recommendations.copy()
-        selection_options['Display'] = selection_options['Name'] + ' (' + selection_options['Calories'].round(1).astype(str) + ' cal)'
-        
-        # Multi-select widget with persistent selections
-        selected_recipe_names = st.multiselect(
-            "Choose recipes to include in your meal plan", 
-            options=selection_options['Display'].tolist(),
-            default=[
-                selection_options.loc[idx, 'Display'] 
-                for idx in st.session_state.selected_recipe_indices
-            ],
-            key='recipe_multiselect_persistent'
-        )
+        if not st.session_state.recommendations.empty:
+            st.write("### 🍳 Recommended Food Items (Single Serving)")
+            
+            # Prepare selection options
+            selection_options = st.session_state.recommendations.copy()
+            selection_options['Display'] = selection_options['Name'] + ' (' + selection_options['Calories'].round(1).astype(str) + ' cal)'
+            
+            # Multi-select widget with persistent selections
+            selected_recipe_names = st.multiselect(
+                "Choose recipes to include in your meal plan", 
+                options=selection_options['Display'].tolist(),
+                default=[
+                    selection_options.loc[idx, 'Display'] 
+                    for idx in st.session_state.selected_recipe_indices
+                ],
+                key='recipe_multiselect_persistent'
+            )
         
         # Update selected indices
         if selected_recipe_names:
