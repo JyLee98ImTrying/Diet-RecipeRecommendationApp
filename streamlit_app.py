@@ -378,21 +378,21 @@ def display_recipe_details(row):
     """Display detailed recipe information."""
     with st.expander(f"📗 {row['Name']}"):
         col1, col2 = st.columns(2)
-        
+
         with col1:
             st.write("**📊 Nutritional Information**")
             st.write(f"• Calories: {row['Calories']:.1f}")
             st.write(f"• Protein: {row['ProteinContent']:.1f}g")
             st.write(f"• Fat: {row['FatContent']:.1f}g")
             st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
-        
+
         with col2:
             st.write("**🔍 Additional Details**")
             st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
             st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
             st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
             st.write(f"• Sugar: {row['SugarContent']:.1f}g")
-        
+
         st.write("**🥗 Ingredients**")
         ingredients = combine_ingredients(
             row.get('RecipeIngredientQuantities', ''), 
@@ -417,14 +417,14 @@ def generate_nutrition_plot(selected_recipes):
         'SaturatedFatContent': selected_recipes['SaturatedFatContent'].sum(),
         'SugarContent': selected_recipes['SugarContent'].sum(),
     }
-    
+
     # Prepare plot data
     labels = list(total_nutrients.keys())
     values = list(total_nutrients.values())
-    
+
     labels.append('Calories')
     values.append(total_calories)
-    
+
     # Create and display plot
     fig, ax = plt.subplots()
     ax.barh(labels, values, color='skyblue')
@@ -447,13 +447,13 @@ def recipe_recommendation_page():
             height = st.number_input("Enter your height (cm)", min_value=100, max_value=250, value=160)
             age = st.number_input("Enter your age (years)", min_value=1, max_value=100, value=30)
             health_condition = st.selectbox("Select your health condition", 
-                                          ["No Non-Communicable Disease", "Diabetic", "High Blood Pressure", "High Cholesterol"])
-            
+                                           ["No Non-Communicable Disease", "Diabetic", "High Blood Pressure", "High Cholesterol"])
+
             wellness_goal = None
             if health_condition == "No Non-Communicable Disease":
                 wellness_goal = st.selectbox("Select your wellness goal", 
-                                           ["Maintain Weight", "Lose Weight", "Muscle Gain"])
-            
+                                             ["Maintain Weight", "Lose Weight", "Muscle Gain"])
+
             submitted = st.form_submit_button("Get Recommendations")
 
             if submitted:
@@ -465,7 +465,7 @@ def recipe_recommendation_page():
                 fat_grams = fat_calories / 9
                 carb_grams = carb_calories / 4
                 meal_fraction = 0.3
-                
+
                 input_features = np.array([
                     daily_calories * meal_fraction,
                     protein_grams * meal_fraction,
@@ -477,7 +477,7 @@ def recipe_recommendation_page():
                     (carb_grams * 0.03) * meal_fraction,
                     (carb_grams * 0.01) * meal_fraction
                 ]).reshape(1, -1)
-                
+
                 # Store in session state
                 st.session_state.input_features = input_features
                 st.session_state.wellness_goal = wellness_goal
@@ -486,7 +486,7 @@ def recipe_recommendation_page():
 
                 # Get recommendations
                 recommendations = recommend_food(input_features, df, models)
-                
+
                 if not recommendations.empty:
                     st.session_state.recommendations = recommendations
                     st.experimental_rerun()
@@ -494,11 +494,11 @@ def recipe_recommendation_page():
     # Recommendations display section
     if not st.session_state.recommendations.empty:
         st.write("### 🍳 Recommended Food Items (Single Serving)")
-        
+
         # Prepare selection options
         selection_options = st.session_state.recommendations.copy()
         selection_options['Display'] = selection_options['Name'] + ' (' + selection_options['Calories'].round(1).astype(str) + ' cal)'
-        
+
         # Multi-select widget with persistent selections
         selected_recipe_names = st.multiselect(
             "Choose recipes to include in your meal plan", 
@@ -509,7 +509,7 @@ def recipe_recommendation_page():
             ],
             key='recipe_multiselect_persistent'
         )
-        
+
         # Update selected indices
         if selected_recipe_names:
             selected_indices = selection_options[
@@ -518,19 +518,19 @@ def recipe_recommendation_page():
             st.session_state.selected_recipe_indices = set(selected_indices)
         else:
             st.session_state.selected_recipe_indices = set()
-        
+
         # Selected recipes details
         if st.session_state.selected_recipe_indices:
             selected_recipes = st.session_state.recommendations.loc[list(st.session_state.selected_recipe_indices)]
-            
+
             # Display selected recipe details
             for idx, row in selected_recipes.iterrows():
                 display_recipe_details(row)
-        
+
         # Nutrition plot generation
         if st.button("Generate Nutrition Plot"):
             selected_recipes = st.session_state.recommendations.loc[list(st.session_state.selected_recipe_indices)]
-            
+
             if not selected_recipes.empty:
                 generate_nutrition_plot(selected_recipes)
             else:
@@ -543,7 +543,7 @@ def recipe_recommendation_page():
             remaining_recommendations = st.session_state.all_recommendations_cache[
                 ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
             ]
-            
+
             if not remaining_recommendations.empty:
                 # Get next 5 recommendations
                 new_recommendations = remaining_recommendations.head(5)
