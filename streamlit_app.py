@@ -555,7 +555,6 @@ def recipe_recommendation_page():
                 st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
         else:
             st.warning("Please get initial recommendations first.")
-        pass
 
 # Call the main page function
 recipe_recommendation_page()
