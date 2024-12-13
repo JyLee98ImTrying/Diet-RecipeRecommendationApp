@@ -557,7 +557,7 @@ def recipe_recommendation_page():
             st.warning("Please get initial recommendations first.")
 
 # Call the main page function
-if page == "🍅Recipe Recommendations":
+if page == "🍅🧀MyHealthMyFood🥑🥬":
     # Call the main page function
     recipe_recommendation_page()
 
