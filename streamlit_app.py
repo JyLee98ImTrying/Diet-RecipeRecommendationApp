@@ -555,10 +555,10 @@ def recipe_recommendation_page():
                 st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
         else:
             st.warning("Please get initial recommendations first.")
-    pass
+        pass
 
-    # Call the main page function
-    recipe_recommendation_page()
+# Call the main page function
+recipe_recommendation_page()
 
 #Weightloss prediction
 elif page == "⚖️Weight Loss Prediction":
