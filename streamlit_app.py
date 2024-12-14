@@ -508,7 +508,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         if not recommendations.empty:
             st.session_state.all_recommendations_cache = recommendations
             st.session_state.previous_recommendations.update(recommendations.index[:5].tolist())
-            display_recommendations_with_selection(recommendations.head(5))
+            display_recommendations_with_selection(recommendations.head(20))
         else:
             st.warning("No recommendations found. Please try different inputs.")
     
