@@ -366,7 +366,6 @@ if 'selected_recipe_indices' not in st.session_state:
 if 'nutrition_plot_generated' not in st.session_state:
     st.session_state.nutrition_plot_generated = False
 
-# Streamlit UI (Recommendation Page)
 
     def format_recipe_instructions(instructions):
         """Format recipe instructions from c() format to numbered list."""
@@ -466,31 +465,31 @@ if 'nutrition_plot_generated' not in st.session_state:
                 st.warning("No recommendations found. Please try different inputs.")
         return current_recommendations
     
-        def calculate_total_nutrition(selected_recipes):
-            total_calories = sum(recipe['Calories'] for recipe in selected_recipes)
-            total_nutrients = {
-                'ProteinContent': sum(recipe['ProteinContent'] for recipe in selected_recipes),
-                'FatContent': sum(recipe['FatContent'] for recipe in selected_recipes),
-                'CarbohydrateContent': sum(recipe['CarbohydrateContent'] for recipe in selected_recipes),
-                'SodiumContent': sum(recipe['SodiumContent'] for recipe in selected_recipes),
-                'CholesterolContent': sum(recipe['CholesterolContent'] for recipe in selected_recipes),
-                'SaturatedFatContent': sum(recipe['SaturatedFatContent'] for recipe in selected_recipes),
-                'SugarContent': sum(recipe['SugarContent'] for recipe in selected_recipes),
-            }
-            return total_calories, total_nutrients
+    def calculate_total_nutrition(selected_recipes):
+        total_calories = sum(recipe['Calories'] for recipe in selected_recipes)
+        total_nutrients = {
+            'ProteinContent': sum(recipe['ProteinContent'] for recipe in selected_recipes),
+            'FatContent': sum(recipe['FatContent'] for recipe in selected_recipes),
+            'CarbohydrateContent': sum(recipe['CarbohydrateContent'] for recipe in selected_recipes),
+            'SodiumContent': sum(recipe['SodiumContent'] for recipe in selected_recipes),
+            'CholesterolContent': sum(recipe['CholesterolContent'] for recipe in selected_recipes),
+            'SaturatedFatContent': sum(recipe['SaturatedFatContent'] for recipe in selected_recipes),
+            'SugarContent': sum(recipe['SugarContent'] for recipe in selected_recipes),
+        }
+        return total_calories, total_nutrients
         
-        def plot_total_nutrition(total_calories, total_nutrients):
-            labels = list(total_nutrients.keys())
-            values = list(total_nutrients.values())
+    def plot_total_nutrition(total_calories, total_nutrients):
+        labels = list(total_nutrients.keys())
+        values = list(total_nutrients.values())
         
-            labels.append('Calories')
-            values.append(total_calories)
+        labels.append('Calories')
+        values.append(total_calories)
         
-            fig, ax = plt.subplots()
-            ax.barh(labels, values, color='skyblue')
-            ax.set_xlabel('Total Nutritional Values')
-            ax.set_title('Total Nutrition of Selected Recipes')
-            st.pyplot(fig)
+        fig, ax = plt.subplots()
+        ax.barh(labels, values, color='skyblue')
+        ax.set_xlabel('Total Nutritional Values')
+        ax.set_title('Total Nutrition of Selected Recipes')
+        st.pyplot(fig)
     
     # Streamlit UI (Recommendation Page)
     if page == "🍅🧀MyHealthMyFood🥑🥬":
