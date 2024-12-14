@@ -378,116 +378,116 @@ def format_recipe_instructions(instructions):
         return steps
 
 def display_recommendations_with_selection(recommendations, key_prefix=''):
-        # Initialize session state if not exists
-        if 'current_recommendations' not in st.session_state:
-            st.session_state.current_recommendations = pd.DataFrame()
-        if 'selected_recipe_indices' not in st.session_state:
-            st.session_state.selected_recipe_indices = set()
-        if 'nutrition_plot_generated' not in st.session_state:
-            st.session_state.nutrition_plot_generated = False
+    # Initialize session state if not exists
+    if 'current_recommendations' not in st.session_state:
+        st.session_state.current_recommendations = pd.DataFrame()
+    if 'selected_recipe_indices' not in st.session_state:
+        st.session_state.selected_recipe_indices = set()
+    if 'nutrition_plot_generated' not in st.session_state:
+        st.session_state.nutrition_plot_generated = False
     
         # Update current recommendations
-        if recommendations is not None and not recommendations.empty:
-            st.session_state.current_recommendations = recommendations
+    if recommendations is not None and not recommendations.empty:
+        st.session_state.current_recommendations = recommendations
     
-        current_recommendations = st.session_state.current_recommendations
+    current_recommendations = st.session_state.current_recommendations
     
-        if current_recommendations is not None and not current_recommendations.empty:
-            st.write("### 🍳 Recommended Food Items (Single Serving)")
+    if current_recommendations is not None and not current_recommendations.empty:
+        st.write("### 🍳 Recommended Food Items (Single Serving)")
     
-            for idx, row in current_recommendations.iterrows():
-                unique_key = f'recipe_select_{key_prefix}_{idx}'
+        for idx, row in current_recommendations.iterrows():
+            unique_key = f'recipe_select_{key_prefix}_{idx}'
     
-                with st.expander(f"📗 {row['Name']}"):
-                    # Display the recipe details
-                    pass
+            with st.expander(f"📗 {row['Name']}"):
+                # Display the recipe details
+                pass
     
-            # Prepare selection options
-            selection_options = current_recommendations.copy()
-            selection_options['Display'] = selection_options['Name'] + ' (' + selection_options['Calories'].round(1).astype(str) + ' cal)'
+        # Prepare selection options
+        selection_options = current_recommendations.copy()
+        selection_options['Display'] = selection_options['Name'] + ' (' + selection_options['Calories'].round(1).astype(str) + ' cal)'
     
-            # Multi-select widget with default selections
-            default_selections = [
-                selection_options.loc[idx, 'Display']
-                for idx in st.session_state.selected_recipe_indices
+        # Multi-select widget with default selections
+        default_selections = [
+            selection_options.loc[idx, 'Display']
+            for idx in st.session_state.selected_recipe_indices
+        ]
+    
+        st.write("### 🍽️ Select Recipes")
+        selected_recipe_names = st.multiselect(
+            "Choose recipes to include in your meal plan",
+            options=selection_options['Display'].tolist(),
+            default=default_selections
+        )
+    
+        # Update selected indices based on multiselect
+        if selected_recipe_names:
+            selected_indices = selection_options[
+                selection_options['Display'].isin(selected_recipe_names)
+            ].index.tolist()
+    
+            # Update session state with selected indices
+            st.session_state.selected_recipe_indices = set(selected_indices)
+        else:
+            st.session_state.selected_recipe_indices = set()
+    
+        # Button to generate nutrition plot
+        if st.button("Generate Nutrition Plot", key="generate_plot_btn"):
+            # Retrieve selected recipes
+            selected_recipes = [
+                row for idx, row in current_recommendations.iterrows()
+                if idx in st.session_state.selected_recipe_indices
             ]
     
-            st.write("### 🍽️ Select Recipes")
-            selected_recipe_names = st.multiselect(
-                "Choose recipes to include in your meal plan",
-                options=selection_options['Display'].tolist(),
-                default=default_selections
-            )
-    
-            # Update selected indices based on multiselect
-            if selected_recipe_names:
-                selected_indices = selection_options[
-                    selection_options['Display'].isin(selected_recipe_names)
-                ].index.tolist()
-    
-                # Update session state with selected indices
-                st.session_state.selected_recipe_indices = set(selected_indices)
+            if selected_recipes:
+                total_calories, total_nutrients = calculate_total_nutrition(selected_recipes)
+                st.write("### 🥗 Total Nutritional Information for Selected Recipes")
+                plot_total_nutrition(total_calories, total_nutrients)
+                st.session_state.nutrition_plot_generated = True
             else:
-                st.session_state.selected_recipe_indices = set()
+                st.warning("No recipes selected. Please select recipes first.")
     
-            # Button to generate nutrition plot
-            if st.button("Generate Nutrition Plot", key="generate_plot_btn"):
-                # Retrieve selected recipes
-                selected_recipes = [
-                    row for idx, row in current_recommendations.iterrows()
-                    if idx in st.session_state.selected_recipe_indices
-                ]
+        # Display previously generated plot if exists
+        if st.session_state.nutrition_plot_generated:
+            selected_recipes = [
+                row for idx, row in current_recommendations.iterrows()
+                if idx in st.session_state.selected_recipe_indices
+            ]
     
-                if selected_recipes:
-                    total_calories, total_nutrients = calculate_total_nutrition(selected_recipes)
-                    st.write("### 🥗 Total Nutritional Information for Selected Recipes")
-                    plot_total_nutrition(total_calories, total_nutrients)
-                    st.session_state.nutrition_plot_generated = True
-                else:
-                    st.warning("No recipes selected. Please select recipes first.")
+            if selected_recipes:
+                total_calories, total_nutrients = calculate_total_nutrition(selected_recipes)
+                st.write("### 🥗 Total Nutritional Information for Selected Recipes")
+                plot_total_nutrition(total_calories, total_nutrients)
     
-            # Display previously generated plot if exists
-            if st.session_state.nutrition_plot_generated:
-                selected_recipes = [
-                    row for idx, row in current_recommendations.iterrows()
-                    if idx in st.session_state.selected_recipe_indices
-                ]
+    else:
+        if not st.session_state.get('current_recommendations'):
+            st.warning("No recommendations found. Please try different inputs.")
+    return current_recommendations
     
-                if selected_recipes:
-                    total_calories, total_nutrients = calculate_total_nutrition(selected_recipes)
-                    st.write("### 🥗 Total Nutritional Information for Selected Recipes")
-                    plot_total_nutrition(total_calories, total_nutrients)
-    
-        else:
-            if not st.session_state.get('current_recommendations'):
-                st.warning("No recommendations found. Please try different inputs.")
-        return current_recommendations
-    
-    def calculate_total_nutrition(selected_recipes):
-        total_calories = sum(recipe['Calories'] for recipe in selected_recipes)
-        total_nutrients = {
-            'ProteinContent': sum(recipe['ProteinContent'] for recipe in selected_recipes),
-            'FatContent': sum(recipe['FatContent'] for recipe in selected_recipes),
-            'CarbohydrateContent': sum(recipe['CarbohydrateContent'] for recipe in selected_recipes),
-            'SodiumContent': sum(recipe['SodiumContent'] for recipe in selected_recipes),
-            'CholesterolContent': sum(recipe['CholesterolContent'] for recipe in selected_recipes),
-            'SaturatedFatContent': sum(recipe['SaturatedFatContent'] for recipe in selected_recipes),
-            'SugarContent': sum(recipe['SugarContent'] for recipe in selected_recipes),
-        }
-        return total_calories, total_nutrients
+def calculate_total_nutrition(selected_recipes):
+    total_calories = sum(recipe['Calories'] for recipe in selected_recipes)
+    total_nutrients = {
+        'ProteinContent': sum(recipe['ProteinContent'] for recipe in selected_recipes),
+        'FatContent': sum(recipe['FatContent'] for recipe in selected_recipes),
+        'CarbohydrateContent': sum(recipe['CarbohydrateContent'] for recipe in selected_recipes),
+        'SodiumContent': sum(recipe['SodiumContent'] for recipe in selected_recipes),
+        'CholesterolContent': sum(recipe['CholesterolContent'] for recipe in selected_recipes),
+        'SaturatedFatContent': sum(recipe['SaturatedFatContent'] for recipe in selected_recipes),
+        'SugarContent': sum(recipe['SugarContent'] for recipe in selected_recipes),
+    }
+    return total_calories, total_nutrients
         
-    def plot_total_nutrition(total_calories, total_nutrients):
-        labels = list(total_nutrients.keys())
-        values = list(total_nutrients.values())
+def plot_total_nutrition(total_calories, total_nutrients):
+    labels = list(total_nutrients.keys())
+    values = list(total_nutrients.values())
         
-        labels.append('Calories')
-        values.append(total_calories)
+    labels.append('Calories')
+    values.append(total_calories)
         
-        fig, ax = plt.subplots()
-        ax.barh(labels, values, color='skyblue')
-        ax.set_xlabel('Total Nutritional Values')
-        ax.set_title('Total Nutrition of Selected Recipes')
-        st.pyplot(fig)    
+    fig, ax = plt.subplots()
+    ax.barh(labels, values, color='skyblue')
+    ax.set_xlabel('Total Nutritional Values')
+    ax.set_title('Total Nutrition of Selected Recipes')
+    st.pyplot(fig)    
     
     # Streamlit UI (Recommendation Page)
 if page == "🍅🧀MyHealthMyFood🥑🥬":
