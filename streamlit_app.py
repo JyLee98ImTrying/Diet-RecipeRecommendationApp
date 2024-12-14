@@ -573,27 +573,30 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         recommendations = recommend_food(input_features, df, models)
         
         # Store all recommendations in cache for reshuffling
-        if not recommendations.empty:
-            st.session_state.all_recommendations_cache = recommendations
-            st.session_state.previous_recommendations.update(recommendations.index[:10].tolist())
-            display_recommendations_with_selection(recommendations.head(10))
-        else:
-            st.warning("No recommendations found. Please try different inputs.")
+        st.session_state.current_input_features = input_features
+            recommendations = recommend_food(input_features, df, models)
+
+            if not recommendations.empty:
+                st.session_state.all_recommendations_cache = recommendations
+                st.session_state.previous_recommendations.update(recommendations.index[:5].tolist())
+                st.session_state.current_recommendations = recommendations
+            else:
+                st.warning("No recommendations found. Please try different inputs.")
+
+    if st.session_state.current_recommendations is not None:
+        display_recommendations_with_selection(st.session_state.current_recommendations)
+    
     # Update the reshuffle button section similarly:
-    if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'all_recommendations_cache'):
+    if st.button("Reshuffle Recommendations"):
         if st.session_state.all_recommendations_cache is not None:
-            # Get all recommendations excluding previously shown ones
             remaining_recommendations = st.session_state.all_recommendations_cache[
                 ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
             ]
-            
+
             if not remaining_recommendations.empty:
-                # Get next 5 recommendations
-                new_recommendations = remaining_recommendations.head(5)
-                # Update shown recommendations
+                new_recommendations = remaining_recommendations.head(20)
                 st.session_state.previous_recommendations.update(new_recommendations.index.tolist())
-                # Display new recommendations
-                display_recommendations_with_selection(new_recommendations)
+                st.session_state.current_recommendations = new_recommendations
             else:
                 st.warning("No more recommendations available. Please try adjusting your inputs for more options.")
         else:
