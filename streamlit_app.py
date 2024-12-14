@@ -574,14 +574,14 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         
         # Store all recommendations in cache for reshuffling
         st.session_state.current_input_features = input_features
-            recommendations = recommend_food(input_features, df, models)
+        recommendations = recommend_food(input_features, df, models)
 
-            if not recommendations.empty:
-                st.session_state.all_recommendations_cache = recommendations
-                st.session_state.previous_recommendations.update(recommendations.index[:5].tolist())
-                st.session_state.current_recommendations = recommendations
-            else:
-                st.warning("No recommendations found. Please try different inputs.")
+        if not recommendations.empty:
+            st.session_state.all_recommendations_cache = recommendations
+            st.session_state.previous_recommendations.update(recommendations.index[:5].tolist())
+            st.session_state.current_recommendations = recommendations
+        else:
+            st.warning("No recommendations found. Please try different inputs.")
 
     if st.session_state.current_recommendations is not None:
         display_recommendations_with_selection(st.session_state.current_recommendations)
