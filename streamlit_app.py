@@ -367,7 +367,7 @@ if 'nutrition_plot_generated' not in st.session_state:
     st.session_state.nutrition_plot_generated = False
 
 
-    def format_recipe_instructions(instructions):
+def format_recipe_instructions(instructions):
         """Format recipe instructions from c() format to numbered list."""
         if not isinstance(instructions, str):
             return []
@@ -492,8 +492,8 @@ if 'nutrition_plot_generated' not in st.session_state:
         st.pyplot(fig)
     
     # Streamlit UI (Recommendation Page)
-    if page == "🍅🧀MyHealthMyFood🥑🥬":
-        st.title('🍅🧀MyHealthMyFood🥑🥬')
+if page == "🍅🧀MyHealthMyFood🥑🥬":
+    st.title('🍅🧀MyHealthMyFood🥑🥬')
     
         # User inputs
         gender = st.selectbox("Select your gender", ["Female", "Male"])
