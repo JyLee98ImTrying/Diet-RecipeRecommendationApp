@@ -400,87 +400,85 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
 
     import matplotlib.pyplot as plt
 
-    def display_recommendations_with_selection(recommendations, key_prefix=''):
-        
-        # Update current recommendations
+    def display_recommendations_with_selection(recommendations):
         if recommendations is not None and not recommendations.empty:
             st.session_state.current_recommendations = recommendations
-        
+    
         current_recommendations = st.session_state.current_recommendations
-
+    
         if current_recommendations is not None and not current_recommendations.empty:
-        st.write("### 🍳 Recommended Food Items (Single Serving)")
-        
-        top_recipes = current_recommendations.head(20)
-        
-        # Temporary variable for recipe selection
-        temp_selected_recipes = st.multiselect(
-            "Select Recipes for Your Meals", 
-            [row['Name'] for _, row in top_recipes.iterrows()],
-            default=st.session_state.selected_recipes,  # Initial state
-            key="recipe_selection"
-        )
-
-        # Update the session state only if the selection has changed
-        if temp_selected_recipes != st.session_state.selected_recipes:
-            st.session_state.selected_recipes = temp_selected_recipes
-        
-        # Display selected recipes
-        selected_recipes_details = [
-            current_recommendations[current_recommendations['Name'] == recipe_name].iloc[0]
-            for recipe_name in st.session_state.selected_recipes
-        ]
-
-        for selected_recipe in selected_recipes_details:
-            with st.expander(f"📗 {selected_recipe['Name']}"):
-                col1, col2 = st.columns(2)
-
-                with col1:
-                    st.write("**📊 Nutritional Information**")
-                    st.write(f"• Calories: {selected_recipe['Calories']:.1f}")
-                    st.write(f"• Protein: {selected_recipe['ProteinContent']:.1f}g")
-                    st.write(f"• Fat: {selected_recipe['FatContent']:.1f}g")
-                    st.write(f"• Carbohydrates: {selected_recipe['CarbohydrateContent']:.1f}g")
-
-                with col2:
-                    st.write("**🔍 Additional Details**")
-                    st.write(f"• Sodium: {selected_recipe['SodiumContent']:.1f}mg")
-                    st.write(f"• Cholesterol: {selected_recipe['CholesterolContent']:.1f}mg")
-                    st.write(f"• Saturated Fat: {selected_recipe['SaturatedFatContent']:.1f}g")
-                    st.write(f"• Sugar: {selected_recipe['SugarContent']:.1f}g")
-
-                st.write("**🍗 Ingredients**")
-                ingredients = combine_ingredients(
-                    selected_recipe.get('RecipeIngredientQuantities', ''), 
-                    selected_recipe.get('RecipeIngredientParts', '')
-                )
-                if ingredients:
-                    for ingredient in ingredients:
-                        st.write(f"• {ingredient}")
-                else:
-                    st.write("No ingredient information available")
-
-                st.write("**👩‍🍳 Recipe Instructions**")
-                instructions = format_recipe_instructions(selected_recipe['RecipeInstructions'])
-                for i, step in enumerate(instructions, 1):
-                    st.write(f"{i}. {step}")
-
-        if st.session_state.selected_recipes:
-            st.markdown("### 📊 Total Daily Nutrition")
-            total_calories, total_nutrients = calculate_total_nutrition(
-                [recipe.to_dict() for recipe in selected_recipes_details]
+            st.write("### 🍳 Recommended Food Items (Single Serving)")
+            
+            top_recipes = current_recommendations.head(20)
+            
+            # Temporary variable for recipe selection
+            temp_selected_recipes = st.multiselect(
+                "Select Recipes for Your Meals", 
+                [row['Name'] for _, row in top_recipes.iterrows()],
+                default=st.session_state.selected_recipes,  # Initial state
+                key="recipe_selection"
             )
-            plot_total_nutrition(total_calories, total_nutrients)
-            st.write(f"**Total Calories:** {total_calories:.1f}")
-            st.write(f"**Total Protein:** {total_nutrients['ProteinContent']:.1f}g")
-            st.write(f"**Total Fat:** {total_nutrients['FatContent']:.1f}g")
-            st.write(f"**Total Carbohydrates:** {total_nutrients['CarbohydrateContent']:.1f}g")
-        
-        return current_recommendations
-    else:
-        if not st.session_state.get('current_recommendations'):
-            st.warning("No recommendations found. Please try different inputs.")
-        return pd.DataFrame()
+    
+            # Update the session state only if the selection has changed
+            if temp_selected_recipes != st.session_state.selected_recipes:
+                st.session_state.selected_recipes = temp_selected_recipes
+            
+            # Display selected recipes
+            selected_recipes_details = [
+                current_recommendations[current_recommendations['Name'] == recipe_name].iloc[0]
+                for recipe_name in st.session_state.selected_recipes
+            ]
+    
+            for selected_recipe in selected_recipes_details:
+                with st.expander(f"📗 {selected_recipe['Name']}"):
+                    col1, col2 = st.columns(2)
+    
+                    with col1:
+                        st.write("**📊 Nutritional Information**")
+                        st.write(f"• Calories: {selected_recipe['Calories']:.1f}")
+                        st.write(f"• Protein: {selected_recipe['ProteinContent']:.1f}g")
+                        st.write(f"• Fat: {selected_recipe['FatContent']:.1f}g")
+                        st.write(f"• Carbohydrates: {selected_recipe['CarbohydrateContent']:.1f}g")
+    
+                    with col2:
+                        st.write("**🔍 Additional Details**")
+                        st.write(f"• Sodium: {selected_recipe['SodiumContent']:.1f}mg")
+                        st.write(f"• Cholesterol: {selected_recipe['CholesterolContent']:.1f}mg")
+                        st.write(f"• Saturated Fat: {selected_recipe['SaturatedFatContent']:.1f}g")
+                        st.write(f"• Sugar: {selected_recipe['SugarContent']:.1f}g")
+    
+                    st.write("**🍗 Ingredients**")
+                    ingredients = combine_ingredients(
+                        selected_recipe.get('RecipeIngredientQuantities', ''), 
+                        selected_recipe.get('RecipeIngredientParts', '')
+                    )
+                    if ingredients:
+                        for ingredient in ingredients:
+                            st.write(f"• {ingredient}")
+                    else:
+                        st.write("No ingredient information available")
+    
+                    st.write("**👩‍🍳 Recipe Instructions**")
+                    instructions = format_recipe_instructions(selected_recipe['RecipeInstructions'])
+                    for i, step in enumerate(instructions, 1):
+                        st.write(f"{i}. {step}")
+    
+            if st.session_state.selected_recipes:
+                st.markdown("### 📊 Total Daily Nutrition")
+                total_calories, total_nutrients = calculate_total_nutrition(
+                    [recipe.to_dict() for recipe in selected_recipes_details]
+                )
+                plot_total_nutrition(total_calories, total_nutrients)
+                st.write(f"**Total Calories:** {total_calories:.1f}")
+                st.write(f"**Total Protein:** {total_nutrients['ProteinContent']:.1f}g")
+                st.write(f"**Total Fat:** {total_nutrients['FatContent']:.1f}g")
+                st.write(f"**Total Carbohydrates:** {total_nutrients['CarbohydrateContent']:.1f}g")
+            
+            return current_recommendations
+        else:
+            if not st.session_state.get('current_recommendations'):
+                st.warning("No recommendations found. Please try different inputs.")
+            return pd.DataFrame()
 
             # Prepare selection options
             selection_options = current_recommendations.copy()
