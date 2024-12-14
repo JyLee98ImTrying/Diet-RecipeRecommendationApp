@@ -520,7 +520,8 @@ if 'nutrition_plot_generated' not in st.session_state:
         ax.set_xlabel('Total Nutritional Values')
         ax.set_title('Total Nutrition of Selected Recipes')
         st.pyplot(fig)
-        
+
+if page == "🍅🧀MyHealthMyFood🥑🥬":
     st.title('🍅🧀MyHealthMyFood🥑🥬')
 
     # User inputs
