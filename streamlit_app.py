@@ -359,33 +359,15 @@ def render_readme_page():
 if page == "ReadMe 📖":
     render_readme_page()
 
-if 'recommendations' not in st.session_state:
-    st.session_state.recommendations = None
-if 'selected_recipes' not in st.session_state:
-    st.session_state.selected_recipes = set()
-if 'previous_recommendations' not in st.session_state:
-    st.session_state.previous_recommendations = set()
-if 'all_recommendations_cache' not in st.session_state:
-    st.session_state.all_recommendations_cache = None
+if 'current_recommendations' not in st.session_state:
+    st.session_state.current_recommendations = pd.DataFrame()
+if 'selected_recipe_indices' not in st.session_state:
+    st.session_state.selected_recipe_indices = set()
+if 'nutrition_plot_generated' not in st.session_state:
+    st.session_state.nutrition_plot_generated = False
 
 # Streamlit UI (Recommendation Page)
-if page == "🍅🧀MyHealthMyFood🥑🥬":
-    st.title('🍅🧀MyHealthMyFood🥑🥬')
 
-    if df is not None and models is not None:
-        # User inputs
-        gender = st.selectbox("Select your gender", ["Female", "Male"])
-        weight = st.number_input("Enter your weight (kg)", min_value=30, max_value=200, value=70)
-        height = st.number_input("Enter your height (cm)", min_value=100, max_value=250, value=160)
-        age = st.number_input("Enter your age (years)", min_value=1, max_value=100, value=30)
-        health_condition = st.selectbox("Select your health condition", 
-                                      ["No Non-Communicable Disease", "Diabetic", "High Blood Pressure", "High Cholesterol"])
-        
-        wellness_goal = None
-        if health_condition == "No Non-Communicable Disease":
-            wellness_goal = st.selectbox("Select your wellness goal", 
-                                       ["Maintain Weight", "Lose Weight", "Muscle Gain"])
-    
     def format_recipe_instructions(instructions):
         """Format recipe instructions from c() format to numbered list."""
         if not isinstance(instructions, str):
@@ -538,7 +520,22 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         ax.set_xlabel('Total Nutritional Values')
         ax.set_title('Total Nutrition of Selected Recipes')
         st.pyplot(fig)
-            
+        
+    st.title('🍅🧀MyHealthMyFood🥑🥬')
+
+    # User inputs
+    gender = st.selectbox("Select your gender", ["Female", "Male"])
+    weight = st.number_input("Enter your weight (kg)", min_value=30, max_value=200, value=70)
+    height = st.number_input("Enter your height (cm)", min_value=100, max_value=250, value=160)
+    age = st.number_input("Enter your age (years)", min_value=1, max_value=100, value=30)
+    health_condition = st.selectbox("Select your health condition", 
+                                   ["No Non-Communicable Disease", "Diabetic", "High Blood Pressure", "High Cholesterol"])
+    
+    wellness_goal = None
+    if health_condition == "No Non-Communicable Disease":
+        wellness_goal = st.selectbox("Select your wellness goal", 
+                                   ["Maintain Weight", "Lose Weight", "Muscle Gain"])
+    
     if st.button("Get Recommendations"):
         daily_calories = calculate_caloric_needs(gender, weight, height, age)
         protein_grams = 0.8 * weight
@@ -560,23 +557,41 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             (carb_grams * 0.01) * meal_fraction
         ]).reshape(1, -1)
                 
-        # Store in session state
-        st.session_state.current_input_features = input_features
-        st.session_state.current_wellness_goal = wellness_goal
-        st.session_state.current_weight = weight
-        st.session_state.current_health_condition = health_condition
-    
-        
         # Get initial recommendations
         recommendations = recommend_food(input_features, df, models)
+
+        st.session_state.current_recommendations = recommendations
+        st.session_state.selected_recipe_indices = set()
+        st.session_state.nutrition_plot_generated = False
         
-        # Store all recommendations in cache for reshuffling
-        if not recommendations.empty:
-            st.session_state.all_recommendations_cache = recommendations
-            st.session_state.previous_recommendations.update(recommendations.index[:5].tolist())
-            display_recommendations_with_selection(recommendations.head(5))
-        else:
-            st.warning("No recommendations found. Please try different inputs.")
+    if st.session_state.current_recommendations is not None and not st.session_state.current_recommendations.empty:
+        display_recommendations_with_selection(st.session_state.current_recommendations)
+    
+        if st.button("Generate Nutrition Plot", key="generate_plot_btn"):
+            # Retrieve selected recipes
+            selected_recipes = [
+                row for idx, row in st.session_state.current_recommendations.iterrows() 
+                if idx in st.session_state.selected_recipe_indices
+            ]
+    
+            if selected_recipes:
+                total_calories, total_nutrients = calculate_total_nutrition(selected_recipes)
+                st.write("### 🥗 Total Nutritional Information for Selected Recipes")
+                plot_total_nutrition(total_calories, total_nutrients)
+                st.session_state.nutrition_plot_generated = True
+            else:
+                st.warning("No recipes selected. Please select recipes first.")
+    
+        if st.session_state.nutrition_plot_generated:
+            selected_recipes = [
+                row for idx, row in st.session_state.current_recommendations.iterrows() 
+                if idx in st.session_state.selected_recipe_indices
+            ]
+    
+            if selected_recipes:
+                total_calories, total_nutrients = calculate_total_nutrition(selected_recipes)
+                st.write("### 🥗 Total Nutritional Information for Selected Recipes")
+                plot_total_nutrition(total_calories, total_nutrients)
     # Update the reshuffle button section similarly:
     if st.button("Reshuffle Recommendations") and hasattr(st.session_state, 'all_recommendations_cache'):
         if st.session_state.all_recommendations_cache is not None:
