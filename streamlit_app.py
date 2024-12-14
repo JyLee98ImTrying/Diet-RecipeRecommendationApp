@@ -376,31 +376,31 @@ def initialize_session_state():
 
 def display_recipe_details(row):
     """Display detailed recipe information."""
-    with st.expander(f"📗 {row['Name']}"):
+    with st.expander(f"\ud83d\udcd7 {row['Name']}"):
         col1, col2 = st.columns(2)
 
         with col1:
-            st.write("**📊 Nutritional Information**")
-            st.write(f"• Calories: {row['Calories']:.1f}")
-            st.write(f"• Protein: {row['ProteinContent']:.1f}g")
-            st.write(f"• Fat: {row['FatContent']:.1f}g")
-            st.write(f"• Carbohydrates: {row['CarbohydrateContent']:.1f}g")
+            st.write("**\ud83d\udd17 Nutritional Information**")
+            st.write(f"\u2022 Calories: {row['Calories']:.1f}")
+            st.write(f"\u2022 Protein: {row['ProteinContent']:.1f}g")
+            st.write(f"\u2022 Fat: {row['FatContent']:.1f}g")
+            st.write(f"\u2022 Carbohydrates: {row['CarbohydrateContent']:.1f}g")
 
         with col2:
-            st.write("**🔍 Additional Details**")
-            st.write(f"• Sodium: {row['SodiumContent']:.1f}mg")
-            st.write(f"• Cholesterol: {row['CholesterolContent']:.1f}mg")
-            st.write(f"• Saturated Fat: {row['SaturatedFatContent']:.1f}g")
-            st.write(f"• Sugar: {row['SugarContent']:.1f}g")
+            st.write("**\ud83d\udd0d Additional Details**")
+            st.write(f"\u2022 Sodium: {row['SodiumContent']:.1f}mg")
+            st.write(f"\u2022 Cholesterol: {row['CholesterolContent']:.1f}mg")
+            st.write(f"\u2022 Saturated Fat: {row['SaturatedFatContent']:.1f}g")
+            st.write(f"\u2022 Sugar: {row['SugarContent']:.1f}g")
 
-        st.write("**🥗 Ingredients**")
+        st.write("**\ud83e\udd57 Ingredients**")
         ingredients = combine_ingredients(
             row.get('RecipeIngredientQuantities', ''), 
             row.get('RecipeIngredientParts', '')
         )
         if ingredients:
             for ingredient in ingredients:
-                st.write(f"• {ingredient}")
+                st.write(f"\u2022 {ingredient}")
         else:
             st.write("No ingredient information available")
 
@@ -437,7 +437,7 @@ def recipe_recommendation_page():
     # Initialize session state
     initialize_session_state()
 
-    st.title('🍅🧀MyHealthMyFood🥑🥬')
+    st.title('\ud83c\udf45\ud83e\uddc0MyHealthMyFood\ud83e\udd51\ud83e\uddac')
 
     # Input section (only show if no previous recommendations)
     if st.session_state.input_features is None:
@@ -489,11 +489,11 @@ def recipe_recommendation_page():
 
                 if not recommendations.empty:
                     st.session_state.recommendations = recommendations
-                    st.experimental_rerun()
+                    st.experimental_set_query_params(rerun="1")
 
     # Recommendations display section
     if not st.session_state.recommendations.empty:
-        st.write("### 🍳 Recommended Food Items (Single Serving)")
+        st.write("### \ud83c\udf73 Recommended Food Items (Single Serving)")
 
         # Prepare selection options
         selection_options = st.session_state.recommendations.copy()
@@ -535,6 +535,21 @@ def recipe_recommendation_page():
                 generate_nutrition_plot(selected_recipes)
             else:
                 st.warning("No recipes selected. Please select recipes first.")
+
+    # Reshuffle button
+    if st.button("Reshuffle Recommendations"):
+        if st.session_state.all_recommendations_cache is not None:
+            # Get all recommendations excluding previously shown ones
+            remaining_recommendations = st.session_state.all_recommendations_cache[
+                ~st.session_state.all_recommendations_cache.index.isin(st.session_state.previous_recommendations)
+            ]
+
+            if not remaining_recommendations.empty:
+                # Get next 5 recommendations
+                new_recommendations = remaining_recommendations.head(5)
+                # Update shown recommendations
+                st.session_state.previous_recommendations.update
+
 
     # Reshuffle button
     if st.button("Reshuffle Recommendations"):
