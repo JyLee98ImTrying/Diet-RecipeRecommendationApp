@@ -362,11 +362,13 @@ if page == "ReadMe 📖":
 if 'recommendations' not in st.session_state:
     st.session_state.recommendations = None
 if 'selected_recipes' not in st.session_state:
-    st.session_state.selected_recipes = set()
+    st.session_state.selected_recipes = []
 if 'previous_recommendations' not in st.session_state:
     st.session_state.previous_recommendations = set()
 if 'all_recommendations_cache' not in st.session_state:
     st.session_state.all_recommendations_cache = None
+if 'current_recommendations' not in st.session_state:
+    st.session_state.current_recommendations = None
 
 # Streamlit UI (Recommendation Page)
 if page == "🍅🧀MyHealthMyFood🥑🥬":
