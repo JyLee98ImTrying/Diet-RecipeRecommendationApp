@@ -377,9 +377,7 @@ def format_recipe_instructions(instructions):
         steps = [step.strip().strip('"') for step in instructions.split('",')]
         return steps
 
-    import matplotlib.pyplot as plt
-
-    def display_recommendations_with_selection(recommendations, key_prefix=''):
+def display_recommendations_with_selection(recommendations, key_prefix=''):
         # Initialize session state if not exists
         if 'current_recommendations' not in st.session_state:
             st.session_state.current_recommendations = pd.DataFrame()
@@ -489,7 +487,7 @@ def format_recipe_instructions(instructions):
         ax.barh(labels, values, color='skyblue')
         ax.set_xlabel('Total Nutritional Values')
         ax.set_title('Total Nutrition of Selected Recipes')
-        st.pyplot(fig)
+        st.pyplot(fig)    
     
     # Streamlit UI (Recommendation Page)
 if page == "🍅🧀MyHealthMyFood🥑🥬":
