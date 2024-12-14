@@ -419,7 +419,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                     st.session_state.recommendations_generated = True
                 else:
                     st.warning("No recommendations found. Please try different inputs.")
-                    return
+            return
 
             # Determine number of meals based on wellness goal
             meals = ['Breakfast', 'Lunch', 'Dinner']
