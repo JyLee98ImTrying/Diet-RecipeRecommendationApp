@@ -467,10 +467,30 @@ if 'nutrition_plot_generated' not in st.session_state:
         return current_recommendations
     
     def calculate_total_nutrition(selected_recipes):
-        # Implement the logic to calculate total nutrition
+        total_calories = sum(recipe['Calories'] for recipe in selected_recipes)
+        total_nutrients = {
+            'ProteinContent': sum(recipe['ProteinContent'] for recipe in selected_recipes),
+            'FatContent': sum(recipe['FatContent'] for recipe in selected_recipes),
+            'CarbohydrateContent': sum(recipe['CarbohydrateContent'] for recipe in selected_recipes),
+            'SodiumContent': sum(recipe['SodiumContent'] for recipe in selected_recipes),
+            'CholesterolContent': sum(recipe['CholesterolContent'] for recipe in selected_recipes),
+            'SaturatedFatContent': sum(recipe['SaturatedFatContent'] for recipe in selected_recipes),
+            'SugarContent': sum(recipe['SugarContent'] for recipe in selected_recipes),
+        }
+        return total_calories, total_nutrients
     
     def plot_total_nutrition(total_calories, total_nutrients):
-        # Implement the logic to plot total nutrition
+        labels = list(total_nutrients.keys())
+        values = list(total_nutrients.values())
+    
+        labels.append('Calories')
+        values.append(total_calories)
+    
+        fig, ax = plt.subplots()
+        ax.barh(labels, values, color='skyblue')
+        ax.set_xlabel('Total Nutritional Values')
+        ax.set_title('Total Nutrition of Selected Recipes')
+        st.pyplot(fig)
     
     # Streamlit UI (Recommendation Page)
     if page == "🍅🧀MyHealthMyFood🥑🥬":
