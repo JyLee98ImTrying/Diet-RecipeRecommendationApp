@@ -458,34 +458,34 @@ if page == "ReadMe 📖":
                 st.session_state.selected_recipe_indices = set(selected_indices)
             else:
                 st.session_state.selected_recipe_indices = set()
-            
-            # Button to generate nutrition plot
-            if st.button("Generate Nutrition Plot", key="generate_plot_btn"):
-                # Retrieve selected recipes
-                selected_recipes = [
-                    row for idx, row in current_recommendations.iterrows() 
-                    if idx in st.session_state.selected_recipe_indices
-                ]
-                
-                if selected_recipes:
-                    total_calories, total_nutrients = calculate_total_nutrition(selected_recipes)
-                    st.write("### 🥗 Total Nutritional Information for Selected Recipes")
-                    plot_total_nutrition(total_calories, total_nutrients)
-                    st.session_state.nutrition_plot_generated = True
-                else:
-                    st.warning("No recipes selected. Please select recipes first.")
-            
-            # Display previously generated plot if exists
-            if st.session_state.nutrition_plot_generated:
-                selected_recipes = [
-                    row for idx, row in current_recommendations.iterrows() 
-                    if idx in st.session_state.selected_recipe_indices
-                ]
-                
-                if selected_recipes:
-                    total_calories, total_nutrients = calculate_total_nutrition(selected_recipes)
-                    st.write("### 🥗 Total Nutritional Information for Selected Recipes")
-                    plot_total_nutrition(total_calories, total_nutrients)
+         if st.session_state.current_recommendations is not None and not st.session_state.current_recommendations.empty:
+    display_recommendations_with_selection(st.session_state.current_recommendations)
+
+    if st.button("Generate Nutrition Plot", key="generate_plot_btn"):
+        # Retrieve selected recipes
+        selected_recipes = [
+            row for idx, row in st.session_state.current_recommendations.iterrows() 
+            if idx in st.session_state.selected_recipe_indices
+        ]
+
+        if selected_recipes:
+            total_calories, total_nutrients = calculate_total_nutrition(selected_recipes)
+            st.write("### 🥗 Total Nutritional Information for Selected Recipes")
+            plot_total_nutrition(total_calories, total_nutrients)
+            st.session_state.nutrition_plot_generated = True
+        else:
+            st.warning("No recipes selected. Please select recipes first.")
+
+        if st.session_state.nutrition_plot_generated:
+            selected_recipes = [
+                row for idx, row in st.session_state.current_recommendations.iterrows() 
+                if idx in st.session_state.selected_recipe_indices
+            ]
+    
+            if selected_recipes:
+                total_calories, total_nutrients = calculate_total_nutrition(selected_recipes)
+                st.write("### 🥗 Total Nutritional Information for Selected Recipes")
+                plot_total_nutrition(total_calories, total_nutrients)
             
             return current_recommendations
         else:
