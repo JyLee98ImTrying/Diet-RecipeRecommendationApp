@@ -12,8 +12,6 @@ import plotly.express as px
 import xgboost as xgb
 import datetime
 
-st.cache_data.clear()
-
 def load_data():
     try:
         url = 'https://raw.githubusercontent.com/JyLee98ImTrying/Diet-RecipeRecommendationApp/master/df_sample.csv'
