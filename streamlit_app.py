@@ -317,16 +317,7 @@ if page == "ReadMe 📖":
 if 'recommendations' not in st.session_state:
     st.session_state.recommendations = None
 if 'selected_recipes' not in st.session_state:
-    st.session_state.selected_recipes = set()
-if 'previous_recommendations' not in st.session_state:
-    st.session_state.previous_recommendations = set()
-if 'all_recommendations_cache' not in st.session_state:
-    st.session_state.all_recommendations_cache = None
-
-if 'recommendations' not in st.session_state:
-    st.session_state.recommendations = None
-if 'selected_recipes' not in st.session_state:
-    st.session_state.selected_recipes = set()
+    st.session_state.selected_recipes = []
 if 'previous_recommendations' not in st.session_state:
     st.session_state.previous_recommendations = set()
 if 'all_recommendations_cache' not in st.session_state:
@@ -360,7 +351,7 @@ if page == "🍅🥐MyHealthMyFood🥑🦬":
 
     import matplotlib.pyplot as plt
 
-    def display_recommendations_with_selection(recommendations, key_prefix=''):
+    def display_recommendations_with_selection(recommendations):
         if recommendations is not None and not recommendations.empty:
             st.session_state.current_recommendations = recommendations
         
@@ -373,8 +364,10 @@ if page == "🍅🥐MyHealthMyFood🥑🦬":
             selected_recipes = st.multiselect(
                 "Select Recipes for Your Meals", 
                 [row['Name'] for _, row in top_recipes.iterrows()],
-                key=f"{key_prefix}recipe_selection"
+                default=st.session_state.selected_recipes,
+                key="recipe_selection"
             )
+            st.session_state.selected_recipes = selected_recipes
             
             selected_recipes_details = [
                 current_recommendations[current_recommendations['Name'] == recipe_name].iloc[0]
@@ -510,6 +503,7 @@ if page == "🍅🥐MyHealthMyFood🥑🦬":
 
 elif page == "⚖️Weight Loss Prediction":
     st.title("⚖️Weight Loss Prediction Calculator")
+
     # Create two columns for input
     col1, col2 = st.columns(2)
     
