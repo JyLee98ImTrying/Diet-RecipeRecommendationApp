@@ -434,7 +434,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         if not current_recommendations.empty:
             st.write("### 🍳 Recommended Food Items (Single Serving)")
     
-            top_recipes = current_recommendations.head(20)
+            top_recipes = current_recommendations.head(6)
     
             # Display all recommended recipes in expanders initially
             for _, recipe in top_recipes.iterrows():
