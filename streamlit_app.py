@@ -373,7 +373,7 @@ if 'current_recommendations' not in st.session_state:
 # Streamlit UI (Recommendation Page)
 if page == "🍅🧀MyHealthMyFood🥑🥬":
     st.title('🍅🧀MyHealthMyFood🥑🥬')
-    st.write("Please refresh the page before keying in new user information. You can key in new information after refreshing the page and then you can click on "Get Recommendation" / "Reshuffle Recommendation". ")
+    st.write("Please refresh the page before keying in new user information. You can key in new information after refreshing the page and then you can click on "Get Recommendation" / "Reshuffle Recommendation.")
 
     if df is not None and models is not None:
         # User inputs
