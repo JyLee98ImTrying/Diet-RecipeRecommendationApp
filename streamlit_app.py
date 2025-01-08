@@ -539,7 +539,7 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             
     if st.button("Get Recommendations"):
         daily_calories = calculate_caloric_needs(gender, weight, height, age)
-        protein_grams = 0.8 * weight
+        protein_grams = 1.2 * weight
         fat_calories = 0.25 * daily_calories
         carb_calories = 0.55 * daily_calories
         fat_grams = fat_calories / 9
