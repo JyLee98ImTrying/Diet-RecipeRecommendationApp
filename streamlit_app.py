@@ -233,6 +233,24 @@ def recommend_food(input_data, df, models, excluded_indices=None):
                                       'CarbohydrateContent', 'SodiumContent', 'CholesterolContent', 
                                       'SaturatedFatContent', 'SugarContent', 'RecipeInstructions',
                                       'RecipeIngredientQuantities', 'RecipeIngredientParts']]
+
+        if not result.empty:
+            st.write("\nRecommendation Statistics (per meal):")
+            st.write(f"Average Calories: {result['Calories'].head().mean():.2f} kcal")
+            st.write(f"Average Protein Content: {result['ProteinContent'].head().mean():.2f}g")
+            
+            if health_condition == "Diabetic":
+                st.write(f"Average Sugar Content: {result['SugarContent'].head().mean():.2f}g")
+            elif health_condition == "High Blood Pressure":
+                st.write(f"Average Sodium Content: {result['SodiumContent'].head().mean():.2f}mg")
+            elif health_condition == "High Cholesterol":
+                st.write(f"Average Cholesterol: {result['CholesterolContent'].head().mean():.2f}mg")
+                st.write(f"Average Saturated Fat: {result['SaturatedFatContent'].head().mean():.2f}g")
+            
+            if wellness_goal == "Muscle Gain":
+                st.write(f"Target Protein per Meal: {user_weight/3:.2f}g")
+            elif wellness_goal == "Lose Weight":
+                st.write(f"Average Fat Content: {result['FatContent'].head().mean():.2f}g")
         
         return result
                                     
