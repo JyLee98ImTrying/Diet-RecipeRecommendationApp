@@ -461,16 +461,20 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
                         st.write(f"{i}. {step}")
     
             # Recipe selection for user's meals
-            temp_selected_recipes = st.multiselect(
+            # Initialize the session state for selected recipes if it doesn't exist
+            if 'selected_recipes' not in st.session_state:
+                st.session_state.selected_recipes = []
+            
+            # Use the session state directly in the multiselect
+            selected_recipes = st.multiselect(
                 "Select Recipes for Your Meals", 
                 [row['Name'] for _, row in top_recipes.iterrows()],
-                default=st.session_state.get("selected_recipes", []),  # Ensure initial state
-                key="recipe_selection"  # Key for the widget
+                default=st.session_state.selected_recipes,
+                key="recipe_multiselect"
             )
-    
-            # Update the session state only if the selection has changed
-            st.session_state.selected_recipes = st.session_state.recipe_selection
-
+            
+            # Update session state with the new selection
+            st.session_state.selected_recipes = selected_recipes
     
             # Display total daily nutrition only if recipes are selected
             if st.session_state.get('selected_recipes'):
