@@ -570,7 +570,6 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
         
         # Store all recommendations in cache for reshuffling
         st.session_state.current_input_features = input_features
-        recommendations = recommend_food(input_features, df, models)
 
         if not recommendations.empty:
             st.session_state.all_recommendations_cache = recommendations
