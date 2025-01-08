@@ -415,16 +415,6 @@ if page == "🍅🧀MyHealthMyFood🥑🥬":
             return []
         return [step.strip() for step in instructions.split('.') if step.strip()]
     
-    # Function to calculate total nutrition
-    def calculate_total_nutrition(recipes):
-        total_calories = sum(recipe['Calories'] for recipe in recipes)
-        total_nutrients = {
-            'ProteinContent': sum(recipe['ProteinContent'] for recipe in recipes),
-            'FatContent': sum(recipe['FatContent'] for recipe in recipes),
-            'CarbohydrateContent': sum(recipe['CarbohydrateContent'] for recipe in recipes)
-        }
-        return total_calories, total_nutrients
-    
     def display_recommendations_with_selection(recommendations):
         if recommendations is not None and not recommendations.empty:
             st.session_state.current_recommendations = recommendations
